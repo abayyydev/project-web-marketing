@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Order - Green Grass</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .hidden-section { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Toast Notification */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 100; }
+        .toast { padding: 1rem; border-radius: 0.5rem; background: white; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; border-left: 4px solid; animation: slideIn 0.3s ease-out; }
+        .toast-success { border-left-color: #10b981; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="toast-container"></div>
+
+    <!-- LOGIN PAGE -->
+    <div id="login-page" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 to-emerald-800 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="bg-green-100 text-green-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">Green Grass System</h1>
+                <p class="text-gray-500 text-sm">Masuk untuk mengelola pesanan</p>
+            </div>
+            <form onsubmit="app.handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" id="username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="admin / marketing" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="pass123" required>
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg transition">Masuk Aplikasi</button>
+            </form>
+            <div class="mt-6 bg-gray-50 p-3 rounded text-xs text-gray-600">
+                <p class="font-bold">Akun Demo:</p>
+                <div class="flex justify-between mt-1"><span>Admin:</span> <code class="bg-gray-200 px-1 rounded">admin</code> / <code class="bg-gray-200 px-1 rounded">pass123</code></div>
+                <div class="flex justify-between mt-1"><span>Marketing:</span> <code class="bg-gray-200 px-1 rounded">marketing</code> / <code class="bg-gray-200 px-1 rounded">pass123</code></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD LAYOUT -->
+    <div id="dashboard-layout" class="hidden-section min-h-screen flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <aside class="bg-white w-full md:w-64 border-r border-gray-200 flex-shrink-0 z-20">
+            <div class="p-6 border-b border-gray-100 flex items-center gap-3">
+                <i class="fas fa-leaf text-green-600 text-xl"></i>
+                <div>
+                    <h2 class="font-bold text-gray-800 leading-tight">Green Grass</h2>
+                    <p class="text-xs text-gray-500" id="role-badge">Role: -</p>
+                </div>
+            </div>
+            <nav class="p-4 space-y-1">
+                <!-- Shared Menu -->
+                <button onclick="app.nav('home')" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition">
+                    <i class="fas fa-home w-5"></i> Dashboard
+                </button>
+
+                <!-- Marketing Menu -->
+                <div id="menu-marketing" class="hidden-section space-y-1">
+                    <button onclick="app.nav('input')" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition">
+                        <i class="fas fa-plus-circle w-5"></i> Input Pesanan
+                    </button>
+                    <button onclick="app.nav('orders')" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition">
+                        <i class="fas fa-list w-5"></i> Pesanan Saya
+                    </button>
+                </div>
+
+                <!-- Admin Menu -->
+                <div id="menu-admin" class="hidden-section space-y-1">
+                    <button onclick="app.nav('orders')" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition">
+                        <i class="fas fa-check-double w-5"></i> Verifikasi Order
+                    </button>
+                    <button onclick="app.nav('products')" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition">
+                        <i class="fas fa-boxes w-5"></i> Master Produk
+                    </button>
+                    <div class="px-4 py-2 text-xs font-bold text-gray-400 uppercase mt-4">Laporan</div>
+                    <button onclick="app.nav('reports')" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition">
+                        <i class="fas fa-chart-line w-5"></i> Rekap Penjualan
+                    </button>
+                </div>
+
+                <button onclick="app.logout()" class="w-full text-left px-4 py-2.5 mt-8 rounded-lg text-red-500 hover:bg-red-50 flex items-center gap-3 transition">
+                    <i class="fas fa-sign-out-alt w-5"></i> Keluar
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto h-screen p-4 md:p-8">
+            <!-- Header -->
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard</h1>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-right hidden md:block">
+                        <div class="font-bold text-gray-700" id="user-name">User</div>
+                        <div class="text-xs text-gray-500" id="current-date">Date</div>
+                    </span>
+                    <div class="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold" id="user-initial">U</div>
+                </div>
+            </header>
+
+            <!-- VIEW: DASHBOARD HOME -->
+            <div id="view-home" class="view-section fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div class="text-gray-500 text-sm mb-1">Total Pesanan Bulan Ini</div>
+                        <div class="text-3xl font-bold text-gray-800" id="dash-total">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div class="text-gray-500 text-sm mb-1">Menunggu Verifikasi</div>
+                        <div class="text-3xl font-bold text-yellow-600" id="dash-pending">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div class="text-gray-500 text-sm mb-1">Pesanan Selesai (Lunas)</div>
+                        <div class="text-3xl font-bold text-green-600" id="dash-done">0</div>
+                    </div>
+                </div>
+                <!-- Shortcut Button for Marketing -->
+                <div id="marketing-shortcut" class="hidden-section bg-green-600 rounded-xl p-8 text-white flex justify-between items-center shadow-lg">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Ada pesanan baru?</h3>
+                        <p class="text-green-100 text-sm">Input data pelanggan sekarang agar stok aman.</p>
+                    </div>
+                    <button onclick="app.nav('input')" class="bg-white text-green-700 px-6 py-3 rounded-lg font-bold hover:bg-green-50 transition shadow-md">
+                        + Buat Pesanan
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW: INPUT ORDER (Green Grass Specific) -->
+            <div id="view-input" class="view-section hidden-section fade-in">
+                <form onsubmit="app.submitOrder(event)" class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <h2 class="font-bold text-lg text-gray-800">Form Pemesanan Baru</h2>
+                        <span class="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600 font-mono" id="new-trx-id">KP-AUTO</span>
+                    </div>
+                    
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Kolom Kiri: Data Pelanggan -->
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-2">Data Pelanggan</h3>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Nama Pelanggan <span class="text-red-500">*</span></label>
+                                <input type="text" id="inp-cust" class="w-full p-2 border rounded focus:ring-green-500 focus:border-green-500" placeholder="Contoh: Bpk Pradito" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">No. WhatsApp <span class="text-red-500">*</span></label>
+                                <input type="number" id="inp-phone" class="w-full p-2 border rounded" placeholder="08xxxx" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Nama Mandor / PIC <span class="text-gray-400 text-xs">(Opsional)</span></label>
+                                <input type="text" id="inp-mandor" class="w-full p-2 border rounded bg-yellow-50" placeholder="Contoh: Mang Ayi (yg stay dilokasi)">
+                                <p class="text-xs text-gray-400 mt-1">Isi agar kurir mudah mencari orang di lokasi.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Link Google Maps <span class="text-red-500">*</span></label>
+                                <input type="url" id="inp-maps" class="w-full p-2 border rounded text-blue-600" placeholder="https://maps.app.goo.gl/..." required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Alamat Lengkap / Patokan</label>
+                                <textarea id="inp-addr" rows="3" class="w-full p-2 border rounded" placeholder="Contoh: Lapangan Yasmin, dekat SMAN 10"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Kolom Kanan: Detail Pesanan -->
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-2">Detail Produk & Logistik</h3>
+                            
+                            <!-- Master Data Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Pilih Produk</label>
+                                <select id="inp-prod" onchange="app.updatePrice()" class="w-full p-2 border rounded bg-white" required>
+                                    <option value="">-- Pilih Produk --</option>
+                                    <!-- Populated by JS -->
+                                </select>
+                                <p class="text-xs text-green-600 mt-1" id="stock-info">Stok Tersedia: -</p>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <div class="w-1/2">
+                                    <label class="block text-sm font-medium text-gray-700">Qty (m²)</label>
+                                    <input type="number" id="inp-qty" oninput="app.updatePrice()" class="w-full p-2 border rounded" value="1" min="1" required>
+                                </div>
+                                <div class="w-1/2">
+                                    <label class="block text-sm font-medium text-gray-700">Total Harga</label>
+                                    <input type="text" id="inp-total" class="w-full p-2 border rounded bg-gray-100 font-bold text-gray-800" readonly>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Sumber Barang (Gudang)</label>
+                                <select id="inp-wh" class="w-full p-2 border rounded bg-white">
+                                    <option value="Rainbow">Gudang Rainbow</option>
+                                    <option value="Pusat">Gudang Pusat</option>
+                                    <option value="Mitra">Mitra Tani</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Metode Kirim</label>
+                                    <select id="inp-ship" class="w-full p-2 border rounded">
+                                        <option value="Diantar">Dikirim Kurir</option>
+                                        <option value="Pick Up">Ambil Sendiri</option>
+                                        <option value="Ekspedisi">Ekspedisi Luar</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Tgl Kirim/Ambil</label>
+                                    <input type="date" id="inp-date" class="w-full p-2 border rounded" required>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Status Pembayaran</label>
+                                <select id="inp-pay" class="w-full p-2 border rounded bg-blue-50">
+                                    <option value="Belum">Belum Bayar</option>
+                                    <option value="DP">DP (Sebagian)</option>
+                                    <option value="Lunas">Lunas</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Catatan Tambahan</label>
+                                <input type="text" id="inp-note" class="w-full p-2 border rounded" placeholder="Misal: Dikirim barengan sama sport grass">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-gray-50 border-t flex justify-end gap-3">
+                        <button type="button" onclick="app.nav('home')" class="px-6 py-2 rounded text-gray-600 hover:bg-gray-200">Batal</button>
+                        <button type="submit" class="px-6 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700 shadow-lg flex items-center gap-2">
+                            <i class="fas fa-save"></i> Simpan Pesanan
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- VIEW: ORDER LIST (Shared) -->
+            <div id="view-orders" class="view-section hidden-section fade-in">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h2 class="font-bold text-gray-800" id="list-title">Daftar Pesanan</h2>
+                        <input type="text" id="search-order" onkeyup="app.renderOrders()" placeholder="Cari nama / no transaksi..." class="px-4 py-2 border rounded-lg text-sm w-64">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-gray-600 uppercase font-bold text-xs">
+                                <tr>
+                                    <th class="px-4 py-3">No Transaksi</th>
+                                    <th class="px-4 py-3">Tgl Kirim</th>
+                                    <th class="px-4 py-3">Pelanggan & Mandor</th>
+                                    <th class="px-4 py-3">Produk</th>
+                                    <th class="px-4 py-3">Gudang</th>
+                                    <th class="px-4 py-3 text-center">Bayar</th>
+                                    <th class="px-4 py-3 text-center">Status Admin</th>
+                                    <th class="px-4 py-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-orders" class="divide-y divide-gray-100">
+                                <!-- JS Injection -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: MASTER PRODUCTS (Admin Only) -->
+            <div id="view-products" class="view-section hidden-section fade-in">
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                    <h2 class="font-bold text-lg mb-4">Master Data Produk</h2>
+                    <table class="w-full text-sm border">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-3 border">ID</th>
+                                <th class="p-3 border">Nama Produk</th>
+                                <th class="p-3 border">Satuan</th>
+                                <th class="p-3 border">Harga Dasar</th>
+                                <th class="p-3 border">Stok (m²)</th>
+                                <th class="p-3 border">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-products"></tbody>
+                    </table>
+                    <div class="mt-4 bg-yellow-50 p-3 rounded text-sm text-yellow-700">
+                        <i class="fas fa-info-circle mr-1"></i> Demo: Edit stok di kode program (array `products`).
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL COPY WA -->
+    <div id="modal-wa" class="hidden-section fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden fade-in">
+            <div class="p-4 border-b bg-green-50 flex justify-between items-center">
+                <h3 class="font-bold text-green-800"><i class="fab fa-whatsapp mr-2"></i>Format WhatsApp</h3>
+                <button onclick="document.getElementById('modal-wa').classList.add('hidden-section')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4">
+                <textarea id="wa-content" rows="12" class="w-full p-3 border rounded-lg bg-gray-50 font-mono text-sm focus:outline-none" readonly></textarea>
+            </div>
+            <div class="p-4 border-t flex justify-end gap-2">
+                <button onclick="app.copyToClipboard()" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                    <i class="fas fa-copy"></i> Salin Teks
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            // DATA DUMMY
+            products: [
+                { id: 'P01', name: 'Rumput Putih', unit: 'm²', price: 35000, stock: 1000 },
+                { id: 'P02', name: 'Rumput Gajah Mini', unit: 'm²', price: 25000, stock: 5000 },
+                { id: 'P03', name: 'Sport Grass', unit: 'm²', price: 120000, stock: 200 }
+            ],
+            orders: [], // Will load from LocalStorage
+            user: null, // Current logged user
+
+            // --- INIT & AUTH ---
+            init: function() {
+                // Load orders
+                const saved = localStorage.getItem('gg_orders');
+                if (saved) this.orders = JSON.parse(saved);
+                else {
+                    // Seed Dummy Data
+                    this.orders = [
+                        { id: 'KP-031025-04', date: '2025-10-04', marketing: 'marketing', customer: 'Bapak Pradito Ala Perdana', mandor: 'Mang Ayi', phone: '083871293173', maps: 'https://maps.app.goo.gl/BP6fHLdWcy6b2WoS7', address: 'Lapangan Yasmin', product_name: 'Rumput Putih', price: 35000, qty: 50, warehouse: 'Rainbow', shipping: 'Diantar', pay_status: 'Lunas', admin_status: 'Verified', note: 'Dikirim barengan sma sport grass 1.000m²' }
+                    ];
+                }
+                
+                // Render products for input
+                this.renderProductOptions();
+                this.renderProductTable();
+                
+                // Set Date Input to today
+                document.getElementById('inp-date').valueAsDate = new Date();
+            },
+
+            handleLogin: function(e) {
+                e.preventDefault();
+                const u = document.getElementById('username').value;
+                const p = document.getElementById('password').value;
+
+                if(p === 'pass123' && (u === 'admin' || u === 'marketing')) {
+                    this.user = { username: u, role: u === 'admin' ? 'admin' : 'marketing', name: u === 'admin' ? 'Administrator' : 'Eneng Eka' };
+                    document.getElementById('login-page').classList.add('hidden-section');
+                    document.getElementById('dashboard-layout').classList.remove('hidden-section');
+                    this.setupUI();
+                } else {
+                    this.showToast('Username/Password salah', 'error');
+                }
+            },
+
+            logout: function() {
+                location.reload();
+            },
+
+            setupUI: function() {
+                document.getElementById('user-name').innerText = this.user.name;
+                document.getElementById('role-badge').innerText = `Role: ${this.user.role.toUpperCase()}`;
+                document.getElementById('user-initial').innerText = this.user.name.charAt(0);
+                document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+                // Toggle Menus
+                if(this.user.role === 'marketing') {
+                    document.getElementById('menu-marketing').classList.remove('hidden-section');
+                    document.getElementById('marketing-shortcut').classList.remove('hidden-section');
+                } else {
+                    document.getElementById('menu-admin').classList.remove('hidden-section');
+                }
+
+                this.updateStats();
+                this.nav('home');
+            },
+
+            nav: function(page) {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden-section'));
+                
+                if(page === 'home') {
+                    document.getElementById('view-home').classList.remove('hidden-section');
+                    document.getElementById('page-title').innerText = "Dashboard Overview";
+                    this.updateStats();
+                } else if(page === 'input') {
+                    document.getElementById('view-input').classList.remove('hidden-section');
+                    document.getElementById('page-title').innerText = "Input Pesanan Baru";
+                    // Generate Auto ID
+                    const newId = `KP-${new Date().getDate()}${new Date().getMonth()+1}25-${this.orders.length + 1}`.replace(/(^|[^0-9])0+/g, "$1"); // Simple logic
+                    document.getElementById('new-trx-id').innerText = `KP-${this.formatDateSimple()}-${this.orders.length + 1}`;
+                } else if(page === 'orders') {
+                    document.getElementById('view-orders').classList.remove('hidden-section');
+                    document.getElementById('page-title').innerText = this.user.role === 'admin' ? "Verifikasi Pesanan" : "Riwayat Pesanan";
+                    document.getElementById('list-title').innerText = this.user.role === 'admin' ? "Semua Pesanan Masuk" : "Pesanan Saya";
+                    this.renderOrders();
+                } else if(page === 'products') {
+                    document.getElementById('view-products').classList.remove('hidden-section');
+                    document.getElementById('page-title').innerText = "Stok & Produk";
+                }
+            },
+
+            // --- LOGIC PESANAN ---
+            renderProductOptions: function() {
+                const sel = document.getElementById('inp-prod');
+                this.products.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.text = p.name;
+                    sel.add(opt);
+                });
+            },
+
+            updatePrice: function() {
+                const pid = document.getElementById('inp-prod').value;
+                const qty = document.getElementById('inp-qty').value;
+                const product = this.products.find(p => p.id === pid);
+                
+                if(product) {
+                    const total = product.price * qty;
+                    document.getElementById('inp-total').value = "Rp " + total.toLocaleString('id-ID');
+                    document.getElementById('stock-info').innerText = `Stok Gudang: ${product.stock} ${product.unit}`;
+                } else {
+                    document.getElementById('inp-total').value = "";
+                    document.getElementById('stock-info').innerText = "Stok Tersedia: -";
+                }
+            },
+
+            submitOrder: function(e) {
+                e.preventDefault();
+                const pid = document.getElementById('inp-prod').value;
+                const product = this.products.find(p => p.id === pid);
+
+                const newOrder = {
+                    id: document.getElementById('new-trx-id').innerText,
+                    date: document.getElementById('inp-date').value,
+                    marketing: this.user.username,
+                    customer: document.getElementById('inp-cust').value,
+                    mandor: document.getElementById('inp-mandor').value || '-',
+                    phone: document.getElementById('inp-phone').value,
+                    maps: document.getElementById('inp-maps').value,
+                    address: document.getElementById('inp-addr').value,
+                    product_name: product.name,
+                    price: product.price,
+                    qty: document.getElementById('inp-qty').value,
+                    warehouse: document.getElementById('inp-wh').value,
+                    shipping: document.getElementById('inp-ship').value,
+                    pay_status: document.getElementById('inp-pay').value,
+                    admin_status: 'Pending',
+                    note: document.getElementById('inp-note').value
+                };
+
+                this.orders.unshift(newOrder);
+                this.saveData();
+                this.showToast("Pesanan berhasil disimpan!", 'success');
+                
+                // Show Format WA
+                this.showWAFormat(newOrder);
+                
+                e.target.reset();
+                document.getElementById('inp-total').value = '';
+            },
+
+            // --- GENERATOR FORMAT WA (THE CORE FEATURE) ---
+            showWAFormat: function(order) {
+                const format = `*Format Pemesanan*
+_${order.product_name} by ${this.user.name}_
+
+*${order.id}*
+
+Nama : ${order.customer}
+Nama Mandor : ${order.mandor}
+No : ${order.phone}
+Alamat : ${order.address} ${order.maps}
+
+*Order :*
+》${order.product_name}
+Qty : ${order.qty} m²
+
+Pengiriman : Dari ${order.warehouse}
+Metode : ${order.shipping}
+Di pick up : ${new Date(order.date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'short', year:'numeric'})}
+Pembayaran : ${order.pay_status}
+
+Note : 
+- ${order.note}`;
+
+                document.getElementById('wa-content').value = format;
+                document.getElementById('modal-wa').classList.remove('hidden-section');
+            },
+
+            copyToClipboard: function() {
+                const txt = document.getElementById('wa-content');
+                txt.select();
+                document.execCommand('copy'); // Fallback for iframe
+                this.showToast("Teks berhasil disalin!", 'success');
+            },
+
+            // --- ADMIN FEATURES ---
+            renderOrders: function() {
+                const tbody = document.getElementById('table-orders');
+                const search = document.getElementById('search-order').value.toLowerCase();
+                tbody.innerHTML = '';
+
+                // Filter logic
+                let data = this.user.role === 'admin' ? this.orders : this.orders.filter(o => o.marketing === this.user.username);
+                data = data.filter(o => o.customer.toLowerCase().includes(search) || o.id.toLowerCase().includes(search));
+
+                data.forEach(o => {
+                    // Status Badge
+                    let statusBadge = `<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">Pending</span>`;
+                    if(o.admin_status === 'Verified') statusBadge = `<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Siap Kirim</span>`;
+                    if(o.admin_status === 'Rejected') statusBadge = `<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">Ditolak</span>`;
+
+                    // Action Buttons
+                    let actions = '';
+                    if(this.user.role === 'admin') {
+                        actions = `
+                            <button onclick="app.updateStatus('${o.id}', 'Verified')" class="text-green-600 hover:bg-green-100 p-1 rounded" title="Approve"><i class="fas fa-check"></i></button>
+                            <button onclick="app.updateStatus('${o.id}', 'Rejected')" class="text-red-600 hover:bg-red-100 p-1 rounded" title="Reject"><i class="fas fa-times"></i></button>
+                        `;
+                    }
+                    // Button WA always visible
+                    actions += `<button onclick="app.regenerateWA('${o.id}')" class="text-blue-600 hover:bg-blue-100 p-1 rounded ml-2" title="Format WA"><i class="fab fa-whatsapp"></i></button>`;
+
+                    const tr = `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 font-mono text-xs font-bold text-gray-500">${o.id}</td>
+                            <td class="px-4 py-3 text-xs">${o.date}</td>
+                            <td class="px-4 py-3">
+                                <div class="font-bold text-gray-800">${o.customer}</div>
+                                <div class="text-xs text-gray-500">PIC: ${o.mandor}</div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div>${o.product_name}</div>
+                                <div class="text-xs font-bold">${o.qty} m²</div>
+                            </td>
+                            <td class="px-4 py-3 text-sm">${o.warehouse}</td>
+                            <td class="px-4 py-3 text-center text-xs font-bold ${o.pay_status === 'Lunas' ? 'text-green-600' : 'text-orange-500'}">${o.pay_status}</td>
+                            <td class="px-4 py-3 text-center">${statusBadge}</td>
+                            <td class="px-4 py-3 text-center">${actions}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += tr;
+                });
+            },
+
+            regenerateWA: function(id) {
+                const order = this.orders.find(o => o.id === id);
+                if(order) this.showWAFormat(order);
+            },
+
+            updateStatus: function(id, status) {
+                const idx = this.orders.findIndex(o => o.id === id);
+                if(idx > -1) {
+                    this.orders[idx].admin_status = status;
+                    this.saveData();
+                    this.renderOrders();
+                    this.updateStats();
+                    this.showToast(`Status diubah jadi ${status}`, 'success');
+                }
+            },
+
+            renderProductTable: function() {
+                const tbody = document.getElementById('table-products');
+                tbody.innerHTML = '';
+                this.products.forEach(p => {
+                    tbody.innerHTML += `
+                        <tr class="border-b">
+                            <td class="p-3 text-gray-500">${p.id}</td>
+                            <td class="p-3 font-bold">${p.name}</td>
+                            <td class="p-3">${p.unit}</td>
+                            <td class="p-3">Rp ${p.price.toLocaleString()}</td>
+                            <td class="p-3 font-bold text-green-600">${p.stock}</td>
+                            <td class="p-3 text-gray-400 text-xs italic">Read Only</td>
+                        </tr>
+                    `;
+                });
+            },
+
+            updateStats: function() {
+                document.getElementById('dash-total').innerText = this.orders.length;
+                document.getElementById('dash-pending').innerText = this.orders.filter(o => o.admin_status === 'Pending').length;
+                document.getElementById('dash-done').innerText = this.orders.filter(o => o.pay_status === 'Lunas' && o.admin_status === 'Verified').length;
+            },
+
+            // UTILS
+            saveData: function() {
+                localStorage.setItem('gg_orders', JSON.stringify(this.orders));
+            },
+            
+            formatDateSimple: function() {
+                const d = new Date();
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                return `${dd}${mm}${String(d.getFullYear()).substr(-2)}`;
+            },
+
+            showToast: function(msg, type) {
+                const c = document.getElementById('toast-container');
+                const t = document.createElement('div');
+                t.className = `toast ${type === 'success' ? 'toast-success' : 'border-red-500 text-red-600'}`;
+                t.innerHTML = `<span>${msg}</span>`;
+                c.appendChild(t);
+                setTimeout(() => t.remove(), 3000);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
