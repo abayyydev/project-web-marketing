@@ -1,83 +1,75 @@
 <?php
 session_start();
 
-// 1. Cek Login
+// 1. CEK LOGIN
 if (!isset($_SESSION['user'])) {
-    require_once 'views/login.php';
+    header("Location: login.php");
     exit;
 }
 
-// 2. Load Header (Membuka div container flex)
-require_once 'includes/header.php';
+$page = $_GET['page'] ?? 'dashboard';
+$role = $_SESSION['user']['role'] ?? '';
+$uLogin = $_SESSION['user']['username'] ?? '';
 
-// 3. Load Sidebar (Akan jadi kolom kiri)
-require_once 'includes/sidebar.php';
+// 2. HELPER AKSES
+$isSuper = ($role === 'super_admin' || $role === 'admin' || $uLogin === 'admin');
 
-// 4. Area Konten Utama (Akan jadi kolom kanan, memenuhi sisa ruang)
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma ERP - Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden text-gray-800">
 
-<main class="flex-1 bg-gray-50 h-full md:h-screen overflow-y-auto">
-    <!-- Header Mobile (Hanya muncul di HP) -->
-    <div class="md:hidden bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-30">
-        <div class="flex items-center gap-2 font-bold text-green-700">
-            <i class="fas fa-leaf"></i> PT Sigma Media
-        </div>
-        <button onclick="alert('Gunakan Laptop untuk fitur lengkap')" class="text-gray-500"><i
-                class="fas fa-bars"></i></button>
-    </div>
+    <?php require_once 'includes/sidebar.php'; ?>
 
-    <!-- Konten Halaman Dinamis -->
-    <div class="p-4 md:p-8 pb-20">
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50/50 p-4 md:p-6 w-full">
         <?php
-        $page = $_GET['page'] ?? 'dashboard';
-
         switch ($page) {
-            case 'dashboard':
-                require_once 'views/dashboard.php';
-                break;
-            case 'input_order':
-                require_once 'views/input_order.php';
-                break;
-            case 'my_orders':
-            case 'verify_orders':
-                require_once 'views/list_orders.php';
-                break;
-            case 'products':
-                if ($_SESSION['user']['role'] !== 'admin') {
-                    echo "Akses Ditolak";
-                    break;
-                }
-                require_once 'views/products.php';
-                break;
-            case 'reports':
-                require_once 'views/reports.php';
-                break;
-            case 'users':
-                if ($_SESSION['user']['role'] !== 'admin') {
-                    echo "Akses Ditolak";
-                    break;
-                }
-                require_once 'views/users.php';
-                break;
-            case 'settings':
-                if ($_SESSION['user']['role'] !== 'admin') {
-                    echo "Akses Ditolak";
-                    break;
-                }
-                require_once 'views/settings.php';
-                break;
-            case 'edit_order':
-                require_once 'views/edit_order.php';
-                break;
-            default:
-                echo "<div class='text-center py-20 text-gray-400'>Halaman tidak ditemukan!</div>";
-                break;
+            case 'dashboard': require_once 'views/dashboard.php'; break;
+            
+            // MAIN MENU (SEMUA BISA AKSES, READ-ONLY DIATUR DI DALAM FILE VIEW)
+            case 'faktur': require_once 'views/faktur.php'; break;
+            case 'input_order': require_once 'views/input_order.php'; break;
+            case 'edit_order': require_once 'views/edit_order.php'; break;
+            case 'penerimaan': require_once 'views/penerimaan.php'; break;
+            case 'pengepakan': require_once 'views/pengepakan.php'; break;
+            case 'pengiriman': require_once 'views/pengiriman.php'; break;
+            
+            case 'faktur_ki': require_once 'views/faktur_ki.php'; break;
+            case 'penerimaan_ki': require_once 'views/penerimaan_ki.php'; break;
+            case 'pengerjaan_ki': require_once 'views/pengerjaan_ki.php'; break;
+            
+            case 'products': require_once 'views/products.php'; break;
+            case 'stock_in': require_once 'views/stock_in.php'; break;
+            case 'stock_out': require_once 'views/stock_out.php'; break;
+            
+            // DATA PUSAT (DIKUNCI KETAT HANYA UNTUK SUPER ADMIN)
+            case 'warehouses': 
+                if($isSuper) require_once 'views/warehouses.php'; else echo "<div class='p-10 text-center text-red-500 font-bold'>Akses Ditolak! Khusus Super Admin.</div>"; break;
+            case 'users': 
+                if($isSuper) require_once 'views/users.php'; else echo "<div class='p-10 text-center text-red-500 font-bold'>Akses Ditolak! Khusus Super Admin.</div>"; break;
+            case 'reports': 
+                if($isSuper) require_once 'views/reports.php'; else echo "<div class='p-10 text-center text-red-500 font-bold'>Akses Ditolak! Khusus Super Admin.</div>"; break;
+            case 'settings': 
+                if($isSuper) require_once 'views/settings.php'; else echo "<div class='p-10 text-center text-red-500 font-bold'>Akses Ditolak! Khusus Super Admin.</div>"; break;
+            
+            default: require_once 'views/dashboard.php'; break;
         }
         ?>
-    </div>
-</main>
-
-</div> <!-- Penutup Div Container Utama (Dibuka di header.php) -->
+    </main>
 </body>
-
 </html>

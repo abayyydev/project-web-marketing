@@ -1,95 +1,137 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
+<?php
+$userRole = $_SESSION['user']['role'] ?? '';
+$uLogin = $_SESSION['user']['username'] ?? '';
+$isAdminPusat = ($userRole === 'super_admin' || $userRole === 'admin' || $uLogin === 'admin' || $userRole === 'keuangan');
+?>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+    
     <!-- Filter Area (Disembunyikan saat Print) -->
     <div class="print:hidden mb-8">
         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-2xl font-bold text-gray-800">
-                <?= $_SESSION['user']['role'] === 'admin' ? 'Laporan Penjualan Pusat' : 'Laporan Penjualan Saya' ?>
+            <h1 class="text-2xl font-bold text-gray-800 uppercase tracking-wider">
+                <?= $isAdminPusat ? 'Laporan Penjualan Pusat' : 'Laporan Penjualan Saya' ?>
             </h1>
         </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4 items-end">
-            <div class="w-full md:w-1/4">
+        
+        <div class="bg-white p-5 rounded-xl shadow-md border-t-4 border-purple-600 flex flex-wrap gap-4 items-end">
+            <div class="w-full md:w-auto flex-1 min-w-[150px]">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Dari Tanggal</label>
-                <input type="date" id="start_date" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500">
+                <input type="date" id="start_date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 outline-none font-bold text-gray-700">
             </div>
-            <div class="w-full md:w-1/4">
+            <div class="w-full md:w-auto flex-1 min-w-[150px]">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Sampai Tanggal</label>
-                <input type="date" id="end_date" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500">
+                <input type="date" id="end_date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 outline-none font-bold text-gray-700">
             </div>
 
-            <!-- FILTER MARKETING (KHUSUS ADMIN) -->
-            <?php if ($_SESSION['user']['role'] === 'admin'): ?>
-                <div class="w-full md:w-1/4">
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Filter Marketing</label>
-                    <select id="marketing_filter" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500 bg-white">
-                        <option value="">-- Semua Marketing --</option>
-                        <!-- JS akan mengisi ini -->
-                    </select>
-                </div>
+            <!-- FILTER KHUSUS ADMIN PUSAT/KEUANGAN -->
+            <?php if($isAdminPusat): ?>
+            <div class="w-full md:w-auto flex-1 min-w-[150px]">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Filter Marketing (Closing)</label>
+                <select id="marketing_filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 bg-white font-bold text-gray-700 outline-none">
+                    <option value="">-- Semua Sales --</option>
+                </select>
+            </div>
+            <div class="w-full md:w-auto flex-1 min-w-[150px]">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Filter Cabang Gudang</label>
+                <select id="warehouse_filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 bg-white font-bold text-gray-700 outline-none">
+                    <option value="">-- Semua Cabang --</option>
+                </select>
+            </div>
             <?php endif; ?>
 
-            <div class="w-full md:w-auto flex gap-2">
-                <button onclick="loadReport()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold transition shadow">
+            <div class="w-full md:w-auto flex gap-2 pt-2 md:pt-0">
+                <button onclick="loadReport()" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-lg font-bold transition shadow-md flex items-center justify-center transform active:scale-95">
                     <i class="fas fa-filter mr-2"></i> Tampilkan
                 </button>
-                <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg font-bold transition shadow">
-                    <i class="fas fa-print"></i>
+                <button onclick="window.print()" class="w-full md:w-auto bg-gray-800 hover:bg-gray-900 text-white px-5 py-2.5 rounded-lg font-bold transition shadow-md flex items-center justify-center transform active:scale-95">
+                    <i class="fas fa-print mr-2"></i> Print
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Area Laporan (Kertas) -->
-    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 min-h-[500px]" id="print-area">
+    <!-- Area Laporan (Kertas A4 / Tampilan Web) -->
+    <div class="bg-white p-8 rounded-xl shadow-xl border border-gray-200 min-h-[500px]" id="print-area">
         
         <!-- Header Laporan -->
-        <div class="text-center mb-8 pb-4 border-b-2 border-gray-800">
-            <h2 class="text-3xl font-bold text-gray-800 uppercase tracking-wider">PT Sigma Media</h2>
-            <p class="text-sm text-gray-500 mt-1">Laporan Aktivitas Penjualan & Pemasangan</p>
-            <p class="text-xs text-gray-400 mt-1" id="periode-txt">Periode: -</p>
+        <div class="text-center mb-8 pb-4 border-b-2 border-purple-800">
+            <h2 class="text-3xl font-black text-purple-900 uppercase tracking-widest">PT Sigma Media Asia</h2>
+            <p class="text-sm text-gray-600 mt-1 font-bold">LAPORAN AKTIVITAS PENJUALAN & INSTALASI</p>
+            <p class="text-xs text-gray-500 mt-1 font-mono bg-purple-50 inline-block px-3 py-1 rounded-md border border-purple-100" id="periode-txt">Periode: -</p>
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-3 gap-6 mb-8 text-center">
-            <div class="p-4 bg-gray-50 rounded border border-gray-100 print:border-gray-300">
-                <div class="text-xs text-gray-500 uppercase font-bold">Total Transaksi</div>
-                <div class="text-2xl font-bold text-gray-800" id="rep-qty">0</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
+            <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 print:border-gray-300">
+                <div class="text-[10px] text-gray-500 uppercase font-black tracking-widest">Total Faktur</div>
+                <div class="text-2xl font-black text-gray-800 mt-1" id="rep-qty">0</div>
             </div>
-            <div class="p-4 bg-green-50 rounded border border-green-100 print:border-gray-300">
-                <div class="text-xs text-green-700 uppercase font-bold">Omzet (Lunas)</div>
-                <div class="text-2xl font-bold text-green-700" id="rep-omzet">Rp 0</div>
+            <div class="p-4 bg-purple-50 rounded-xl border border-purple-200 print:border-gray-300">
+                <div class="text-[10px] text-purple-700 uppercase font-black tracking-widest">Omzet Barang Lunas</div>
+                <div class="text-xl font-black text-purple-800 mt-1" id="rep-omzet-kp">Rp 0</div>
             </div>
-            <div class="p-4 bg-yellow-50 rounded border border-yellow-100 print:border-gray-300">
-                <div class="text-xs text-yellow-700 uppercase font-bold">Potensi (DP/Belum)</div>
-                <div class="text-2xl font-bold text-yellow-700" id="rep-piutang">Rp 0</div>
+            <div class="p-4 bg-orange-50 rounded-xl border border-orange-200 print:border-gray-300">
+                <div class="text-[10px] text-orange-700 uppercase font-black tracking-widest">Omzet Jasa Lunas</div>
+                <div class="text-xl font-black text-orange-800 mt-1" id="rep-omzet-ki">Rp 0</div>
+            </div>
+            <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200 print:border-gray-300">
+                <div class="text-[10px] text-emerald-700 uppercase font-black tracking-widest">Grand Omzet Keseluruhan</div>
+                <div class="text-2xl font-black text-emerald-700 mt-1" id="rep-omzet-total">Rp 0</div>
             </div>
         </div>
 
-        <!-- Tabel Data -->
-        <table class="w-full text-sm text-left border-collapse">
-            <thead>
-                <tr class="border-b-2 border-gray-800">
-                    <th class="py-2">Tanggal</th>
-                    <th class="py-2">No. KP</th>
-                    <th class="py-2">Pelanggan</th>
-                    <?php if ($_SESSION['user']['role'] === 'admin'): ?>
-                        <th class="py-2">Marketing</th>
-                    <?php endif; ?>
-                    <th class="py-2 text-center">Status</th>
-                    <th class="py-2 text-right">Nilai Total</th>
-                </tr>
-            </thead>
-            <tbody id="report-rows" class="divide-y divide-gray-200">
-                <!-- JS will load here -->
-            </tbody>
-        </table>
+        <!-- TABEL 1: BARANG (KP) -->
+        <div class="mb-10">
+            <h3 class="font-bold text-purple-900 uppercase mb-3 border-b border-purple-200 pb-2 flex items-center"><i class="fas fa-box text-purple-600 mr-2"></i> Rincian Penjualan Barang (KP)</h3>
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-600 text-[10px] uppercase font-bold tracking-wider">
+                        <th class="py-3 px-2 rounded-tl-lg">Tanggal</th>
+                        <th class="py-3 px-2">No. KP</th>
+                        <th class="py-3 px-2">Pelanggan</th>
+                        <th class="py-3 px-2">Sales (Closing)</th>
+                        <?php if($isAdminPusat): ?>
+                        <th class="py-3 px-2 text-center">Cabang</th>
+                        <?php endif; ?>
+                        <th class="py-3 px-2 text-center">Status Bayar</th>
+                        <th class="py-3 px-2 text-right rounded-tr-lg">Nilai Barang</th>
+                    </tr>
+                </thead>
+                <tbody id="report-kp-rows" class="divide-y divide-gray-100 font-medium text-gray-700">
+                    <!-- JS will load here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TABEL 2: INSTALASI (KI) -->
+        <div class="mb-4">
+            <h3 class="font-bold text-orange-800 uppercase mb-3 border-b border-orange-200 pb-2 flex items-center"><i class="fas fa-tools text-orange-600 mr-2"></i> Rincian Jasa Instalasi (KI)</h3>
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-600 text-[10px] uppercase font-bold tracking-wider">
+                        <th class="py-3 px-2 rounded-tl-lg">Tanggal</th>
+                        <th class="py-3 px-2">No. KI</th>
+                        <th class="py-3 px-2">Pelanggan</th>
+                        <th class="py-3 px-2">Sales (Closing)</th>
+                        <?php if($isAdminPusat): ?>
+                        <th class="py-3 px-2 text-center">Cabang</th>
+                        <?php endif; ?>
+                        <th class="py-3 px-2 text-center">Status Bayar</th>
+                        <th class="py-3 px-2 text-right rounded-tr-lg">Nilai Jasa</th>
+                    </tr>
+                </thead>
+                <tbody id="report-ki-rows" class="divide-y divide-gray-100 font-medium text-gray-700">
+                    <!-- JS will load here -->
+                </tbody>
+            </table>
+        </div>
 
         <!-- Footer Tanda Tangan (Muncul saat Print) -->
-        <div class="hidden print:flex justify-end mt-16">
+        <div class="hidden print:flex justify-end mt-20">
             <div class="text-center">
-                <p class="mb-16 text-sm">Bogor, <span id="print-date"></span></p>
-                <p class="font-bold underline text-sm"><?= $_SESSION['user']['name'] ?></p>
-                <p class="text-xs text-gray-500 uppercase"><?= $_SESSION['user']['role'] ?></p>
+                <p class="mb-20 text-sm text-gray-600">Dicetak di: Bogor, <span id="print-date"></span></p>
+                <p class="font-black underline text-sm text-gray-800 uppercase tracking-widest"><?= $_SESSION['user']['name'] ?></p>
+                <p class="text-xs text-gray-500 uppercase font-bold"><?= str_replace('_', ' ', $_SESSION['user']['role']) ?></p>
             </div>
         </div>
     </div>
@@ -99,13 +141,13 @@
     @media print {
         body * { visibility: hidden; }
         #print-area, #print-area * { visibility: visible; }
-        #print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border: none; }
-        .bg-gray-50, .bg-green-50, .bg-yellow-50 { background-color: white !important; border: 1px solid #ddd !important; }
+        #print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border: none; box-shadow: none; }
+        .bg-gray-50, .bg-purple-50, .bg-orange-50, .bg-emerald-50, .bg-gray-100 { background-color: white !important; border: 1px solid #e5e7eb !important; }
     }
 </style>
 
 <script>
-const isAdmin = <?= $_SESSION['user']['role'] === 'admin' ? 'true' : 'false' ?>;
+const isAdminPusat = <?= $isAdminPusat ? 'true' : 'false' ?>;
 
 document.addEventListener('DOMContentLoaded', () => {
     const d = new Date();
@@ -113,9 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('start_date').value = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
     document.getElementById('print-date').innerText = d.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
     
-    // Jika Admin, load daftar marketing dulu
-    if(isAdmin) {
+    if(isAdminPusat) {
         loadMarketingOptions();
+        loadWarehouseOptions();
     }
     
     loadReport();
@@ -123,13 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadMarketingOptions() {
     try {
-        // Kita gunakan API get_users.php yg sudah ada (filter manual di JS)
-        const res = await fetch('api/get_users.php');
+        // PERBAIKAN: Memanggil API yang benar (user_action.php?action=get)
+        const res = await fetch('api/user_action.php?action=get');
         const json = await res.json();
         if(json.status === 'success') {
             const select = document.getElementById('marketing_filter');
+            select.innerHTML = '<option value="">-- Semua Sales --</option>'; // Reset opsi
             json.data.forEach(u => {
-                // Hanya tampilkan user role marketing (opsional, tampilkan semua juga boleh)
                 if(u.role === 'marketing') {
                     const opt = document.createElement('option');
                     opt.value = u.id;
@@ -137,67 +179,125 @@ async function loadMarketingOptions() {
                     select.appendChild(opt);
                 }
             });
+        } else {
+            console.error("Gagal memuat marketing:", json.message);
         }
-    } catch(e) { console.error("Gagal load marketing options"); }
+    } catch(e) {
+        console.error("Koneksi error saat memuat marketing:", e);
+    }
+}
+
+async function loadWarehouseOptions() {
+    try {
+        const res = await fetch('api/warehouse_action.php?action=get');
+        const json = await res.json();
+        if(json.status === 'success') {
+            const select = document.getElementById('warehouse_filter');
+            select.innerHTML = '<option value="">-- Semua Cabang --</option>'; // Reset opsi
+            json.data.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w.name;
+                opt.text = w.name;
+                select.appendChild(opt);
+            });
+        }
+    } catch(e) {
+        console.error("Koneksi error saat memuat cabang:", e);
+    }
 }
 
 async function loadReport() {
     const start = document.getElementById('start_date').value;
     const end = document.getElementById('end_date').value;
-    const tbody = document.getElementById('report-rows');
+    const tbodyKP = document.getElementById('report-kp-rows');
+    const tbodyKI = document.getElementById('report-ki-rows');
     
-    // Ambil nilai filter marketing (jika ada)
     let marketingId = '';
-    const marketingSelect = document.getElementById('marketing_filter');
-    if(marketingSelect) {
-        marketingId = marketingSelect.value;
+    let warehouseName = '';
+    
+    if(isAdminPusat) {
+        const mSelect = document.getElementById('marketing_filter');
+        const wSelect = document.getElementById('warehouse_filter');
+        if(mSelect) marketingId = mSelect.value;
+        if(wSelect) warehouseName = wSelect.value;
     }
 
-    // Update Text Header
-    let periodeTxt = `Periode: ${new Date(start).toLocaleDateString('id-ID')} s/d ${new Date(end).toLocaleDateString('id-ID')}`;
-    if(marketingId && marketingSelect.options[marketingSelect.selectedIndex]) {
-        periodeTxt += ` | Marketing: ${marketingSelect.options[marketingSelect.selectedIndex].text}`;
+    // Teks Header Print
+    let periodeTxt = `TGL: ${new Date(start).toLocaleDateString('id-ID')} s/d ${new Date(end).toLocaleDateString('id-ID')}`;
+    if(isAdminPusat) {
+        const mSelect = document.getElementById('marketing_filter');
+        const wSelect = document.getElementById('warehouse_filter');
+        if(marketingId && mSelect.options[mSelect.selectedIndex]) periodeTxt += ` | SALES: ${mSelect.options[mSelect.selectedIndex].text}`;
+        if(warehouseName && wSelect.options[wSelect.selectedIndex]) periodeTxt += ` | CABANG: ${wSelect.options[wSelect.selectedIndex].text}`;
     }
-    document.getElementById('periode-txt').innerText = periodeTxt;
+    document.getElementById('periode-txt').innerText = periodeTxt.toUpperCase();
 
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Memuat data...</td></tr>';
+    tbodyKP.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-purple-500 font-bold animate-pulse">Menyiapkan Data Barang...</td></tr>';
+    tbodyKI.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-orange-500 font-bold animate-pulse">Menyiapkan Data Jasa...</td></tr>';
 
     try {
-        // Kirim parameter filter ke API
-        const res = await fetch(`api/get_report.php?start=${start}&end=${end}&marketing_id=${marketingId}`);
+        const res = await fetch(`api/get_report.php?start=${start}&end=${end}&marketing_id=${marketingId}&warehouse=${warehouseName}`);
         const json = await res.json();
 
         if(json.status === 'success') {
-            document.getElementById('rep-qty').innerText = json.summary.total_qty || 0;
-            document.getElementById('rep-omzet').innerText = "Rp " + parseInt(json.summary.omzet_lunas || 0).toLocaleString('id-ID');
-            document.getElementById('rep-piutang').innerText = "Rp " + parseInt(json.summary.potensi_piutang || 0).toLocaleString('id-ID');
+            // Update Summary
+            document.getElementById('rep-qty').innerText = json.summary.qty || 0;
+            document.getElementById('rep-omzet-kp').innerText = "Rp " + parseInt(json.summary.omzet_kp || 0).toLocaleString('id-ID');
+            document.getElementById('rep-omzet-ki').innerText = "Rp " + parseInt(json.summary.omzet_ki || 0).toLocaleString('id-ID');
+            document.getElementById('rep-omzet-total').innerText = "Rp " + parseInt(json.summary.omzet_total || 0).toLocaleString('id-ID');
 
-            tbody.innerHTML = '';
-            if(json.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">Tidak ada penjualan pada periode ini.</td></tr>';
-                return;
+            // Render Tabel KP (Barang)
+            tbodyKP.innerHTML = '';
+            if(json.data_kp.length === 0) {
+                tbodyKP.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-gray-400 font-bold uppercase tracking-widest">Kosong / Tidak Ada Penjualan Barang</td></tr>';
+            } else {
+                json.data_kp.forEach(row => {
+                    const date = new Date(row.date).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
+                    let warehouseCol = isAdminPusat ? `<td class="py-2 px-2 text-center text-purple-700 text-xs font-bold uppercase">${row.warehouse || 'Pusat'}</td>` : '';
+                    let payBadge = row.pay_status === 'Lunas' ? 'text-emerald-600 bg-emerald-50 border border-emerald-200' : 'text-red-500 bg-red-50 border border-red-200';
+
+                    tbodyKP.innerHTML += `
+                        <tr class="hover:bg-purple-50/20 transition">
+                            <td class="py-3 px-2 text-xs text-gray-600">${date}</td>
+                            <td class="py-3 px-2 font-mono font-bold text-xs text-purple-800">${row.number}</td>
+                            <td class="py-3 px-2 font-black text-xs uppercase">${row.customer}</td>
+                            <td class="py-3 px-2 text-xs uppercase font-bold text-gray-600"><i class="fas fa-user-tag text-purple-400 mr-1"></i>${row.marketing}</td>
+                            ${warehouseCol}
+                            <td class="py-3 px-2 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${payBadge}">${row.pay_status}</span></td>
+                            <td class="py-3 px-2 text-right font-black text-gray-800">Rp ${parseInt(row.total).toLocaleString('id-ID')}</td>
+                        </tr>
+                    `;
+                });
             }
 
-            json.data.forEach(row => {
-                const date = new Date(row.created_at).toLocaleDateString('id-ID');
-                let statusBadge = row.pay_status;
-                let marketingCol = isAdmin ? `<td class="py-2 text-gray-500 text-xs uppercase">${row.marketing}</td>` : '';
+            // Render Tabel KI (Jasa)
+            tbodyKI.innerHTML = '';
+            if(json.data_ki.length === 0) {
+                tbodyKI.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-gray-400 font-bold uppercase tracking-widest">Kosong / Tidak Ada Jasa Instalasi</td></tr>';
+            } else {
+                json.data_ki.forEach(row => {
+                    const date = new Date(row.date).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
+                    let warehouseCol = isAdminPusat ? `<td class="py-2 px-2 text-center text-orange-700 text-xs font-bold uppercase">${row.warehouse || 'Pusat'}</td>` : '';
+                    let payBadge = row.pay_status === 'Lunas' ? 'text-emerald-600 bg-emerald-50 border border-emerald-200' : 'text-red-500 bg-red-50 border border-red-200';
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="py-2 text-gray-600">${date}</td>
-                        <td class="py-2 font-mono font-bold text-xs">${row.kp_number}</td>
-                        <td class="py-2 font-medium">${row.customer_name}</td>
-                        ${marketingCol}
-                        <td class="py-2 text-center text-xs font-bold text-gray-600">${statusBadge}</td>
-                        <td class="py-2 text-right font-bold">Rp ${parseInt(row.grand_total).toLocaleString('id-ID')}</td>
-                    </tr>
-                `;
-            });
+                    tbodyKI.innerHTML += `
+                        <tr class="hover:bg-orange-50/20 transition">
+                            <td class="py-3 px-2 text-xs text-gray-600">${date}</td>
+                            <td class="py-3 px-2 font-mono font-bold text-xs text-orange-800">${row.number}</td>
+                            <td class="py-3 px-2 font-black text-xs uppercase">${row.customer}</td>
+                            <td class="py-3 px-2 text-xs uppercase font-bold text-gray-600"><i class="fas fa-user-tag text-orange-400 mr-1"></i>${row.marketing}</td>
+                            ${warehouseCol}
+                            <td class="py-3 px-2 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${payBadge}">${row.pay_status}</span></td>
+                            <td class="py-3 px-2 text-right font-black text-gray-800">Rp ${parseInt(row.total).toLocaleString('id-ID')}</td>
+                        </tr>
+                    `;
+                });
+            }
         }
     } catch(e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">Gagal memuat laporan.</td></tr>';
+        tbodyKP.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500 font-bold">Gagal memuat laporan server.</td></tr>';
+        tbodyKI.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500 font-bold">Gagal memuat laporan server.</td></tr>';
     }
 }
 </script>

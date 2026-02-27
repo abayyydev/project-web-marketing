@@ -2,128 +2,89 @@
 header('Content-Type: application/json');
 require_once '../config/database.php';
 
-// Baca data JSON mentah yang dikirim oleh Javascript
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
 if (!$data) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Data JSON tidak valid']);
-    exit;
+    http_response_code(400); echo json_encode(['status' => 'error', 'message' => 'Data JSON tidak valid']); exit;
 }
 
 try {
-    // 1. MULAI TRANSAKSI
     $pdo->beginTransaction();
 
-    // --- STEP A: Cari ID Marketing ---
-    // Di frontend kita kirim username, di sini kita cari ID-nya di tabel users
     $stmtUser = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-    $stmtUser->execute([$data['marketing_username'] ?? 'marketing']); // Default ke 'marketing' jika kosong
+    $stmtUser->execute([$data['marketing_username'] ?? 'marketing']);
     $user = $stmtUser->fetch();
-    $marketingId = $user ? $user['id'] : 1; // Fallback ke ID 1 jika user tidak ketemu
+    $marketingId = $user ? $user['id'] : 1;
 
-    // --- STEP B: Insert ke Tabel ORDERS (Header) ---
+    // Cari ID Gudang yang dipilih
+    $stmtWh = $pdo->prepare("SELECT id FROM warehouses WHERE name = ?");
+    $stmtWh->execute([$data['wh']]);
+    $whId = $stmtWh->fetchColumn();
+
+    // Insert ke Tabel ORDERS
     $sqlOrder = "INSERT INTO orders (
-        kp_number, ki_number, customer_name, customer_phone, customer_address, maps_link, 
-        warehouse_source, delivery_date, grand_total, pay_status, 
-        total_fee_r, total_fee_dc, marketing_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        kp_number, ki_number, brand, tipe_order, traffic_source, customer_name, customer_phone, customer_address, maps_link, 
+        warehouse_source, delivery_date, grand_total, marketplace_fee, order_status, total_fee_r, total_fee_dc, marketing_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Menunggu Pembayaran', ?, ?, ?)";
 
     $stmtOrder = $pdo->prepare($sqlOrder);
     $stmtOrder->execute([
-        $data['kp_id'],
-        ($data['ki_id'] !== '-' ? $data['ki_id'] : NULL), // Jika '-' kirim NULL
-        $data['customer'],
-        $data['phone'],
-        $data['address'],
-        $data['maps'],
-        $data['wh'],
-        $data['date_send'],
-        $data['totals']['grand'], // Total Tagihan Akhir
-        $data['pay_status'],
-        $data['fees']['r'],  // Fee R
-        $data['fees']['dc'], // Fee Dc
-        $marketingId
+        $data['kp_id'], ($data['ki_id'] !== '-' ? $data['ki_id'] : NULL), $data['brand'], $data['tipe_order'] ?? 'Reguler',
+        $data['traffic'], $data['customer'], $data['phone'], $data['address'], $data['maps'], 
+        $data['wh'], $data['date_send'], $data['totals']['grand'], $data['totals']['marketplace_fee'],
+        $data['fees']['r'], $data['fees']['dc'], $marketingId
     ]);
 
-    // Ambil ID Order yang baru saja dibuat
     $orderId = $pdo->lastInsertId();
 
-    // --- STEP C: Insert ke Tabel ORDER_ITEMS (Looping Barang) ---
-    $sqlItem = "INSERT INTO order_items (order_id, product_id, qty, deal_price, subtotal) VALUES (?, ?, ?, ?, ?)";
-    $stmtItem = $pdo->prepare($sqlItem);
+    // AUTO-MIGRASI KOLOM ITEM_NOTE (Bapak tidak perlu sentuh database manual)
+    // Kolom ini akan menyimpan catatan ukuran potong spesifik per item
+    try { $pdo->query("SELECT item_note FROM order_items LIMIT 1"); }
+    catch (Exception $e) { $pdo->exec("ALTER TABLE order_items ADD COLUMN item_note VARCHAR(255) NULL AFTER product_id"); }
 
-    // Looping item belanjaan
+    // Insert Items DAN Kurangi Stok
+    $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, item_note, qty, deal_price, subtotal) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmtType = $pdo->prepare("SELECT type FROM products WHERE id = ?");
+    $stmtStock = $pdo->prepare("UPDATE product_stocks SET stock = stock - ? WHERE product_id = ? AND warehouse_id = ? AND stock >= ?");
+
     foreach ($data['items'] as $item) {
-        // Pastikan product_id ada (dikirim dari frontend via atribut data-id di option)
-        // Jika frontend mengirim product_id, gunakan itu.
-        // Jika tidak, cari berdasarkan nama (opsional/fallback).
-
         $prodId = $item['product_id'] ?? null;
-
-        if (!$prodId) {
-            // Fallback cari ID kalau JS lupa kirim ID
-            $stmtFindProd = $pdo->prepare("SELECT id FROM products WHERE name = ? LIMIT 1");
-            $stmtFindProd->execute([$item['name']]);
-            $prod = $stmtFindProd->fetch();
-            $prodId = $prod ? $prod['id'] : null;
-        }
-
         if ($prodId) {
-            $stmtItem->execute([
-                $orderId,
-                $prodId,
-                $item['qty'],
-                $item['price'], // Ini harga Deal/Manual dari marketing
-                $item['sub']
-            ]);
+            // Kita simpan $item['name'] ke kolom item_note karena dari frontend JS sudah berisi tambahan info [Ukuran: 2mx5m]
+            $stmtItem->execute([$orderId, $prodId, $item['name'], $item['qty'], $item['price'], $item['sub']]);
+            
+            // Cek apakah barang fisik
+            $stmtType->execute([$prodId]);
+            $pType = $stmtType->fetchColumn();
+
+            if ($whId && $pType === 'goods') {
+                // Kurangi stok di gudang bersangkutan
+                $stmtStock->execute([$item['qty'], $prodId, $whId, $item['qty']]);
+                if ($stmtStock->rowCount() == 0) {
+                    // JIKA STOK KURANG, BATALKAN SEMUA TRANSAKSI (ROLLBACK)
+                    throw new Exception("SISTEM MENOLAK: Stok tidak mencukupi untuk produk " . $item['name'] . " di Gudang " . $data['wh']);
+                }
+            }
         }
     }
 
-    // --- STEP D: Insert ke Tabel INSTALLATIONS (Jika Ada) ---
+    // Insert Instalasi
     if ($data['ki_id'] !== '-' && !empty($data['install_info'])) {
         $info = $data['install_info'];
-        $sqlInstall = "INSERT INTO installations (
-            order_id, mandor_name, work_date, area_size, service_price, total_price
-        ) VALUES (?, ?, ?, ?, ?, ?)";
-
-        $stmtInstall = $pdo->prepare($sqlInstall);
-        $stmtInstall->execute([
-            $orderId,
-            $info['mandor'],
-            $info['date'],
-            $info['qty'],   // Luas Area
-            $info['price'], // Harga Jasa per Meter
-            $info['total']
-        ]);
+        $stmtInstall = $pdo->prepare("INSERT INTO installations (order_id, mandor_name, work_date, area_size, service_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmtInstall->execute([$orderId, $info['mandor'], $info['date'], $info['qty'], $info['price'], $info['total']]);
     }
 
-    // --- STEP E: UPDATE COUNTER DI SETTINGS (Logic Baru) ---
-    // 1. Naikkan counter KP (Pesanan Barang) selalu
-    $stmtUpdKP = $pdo->prepare("UPDATE app_settings SET setting_value = setting_value + 1 WHERE setting_key = 'kp_counter'");
-    $stmtUpdKP->execute();
+    // Update Counter
+    $pdo->prepare("UPDATE app_settings SET setting_value = setting_value + 1 WHERE setting_key = 'kp_counter'")->execute();
+    if ($data['ki_id'] !== '-') $pdo->prepare("UPDATE app_settings SET setting_value = setting_value + 1 WHERE setting_key = 'ki_counter'")->execute();
 
-    // 2. Naikkan counter KI (Instalasi) HANYA jika ada instalasi
-    if ($data['ki_id'] !== '-') {
-        $stmtUpdKI = $pdo->prepare("UPDATE app_settings SET setting_value = setting_value + 1 WHERE setting_key = 'ki_counter'");
-        $stmtUpdKI->execute();
-    }
-
-    // 2. KOMIT TRANSAKSI (Simpan Permanen jika semua langkah sukses)
     $pdo->commit();
-
-    echo json_encode(['status' => 'success', 'message' => 'Transaksi Berhasil Disimpan', 'order_id' => $orderId]);
+    echo json_encode(['status' => 'success', 'message' => 'Transaksi Berhasil & Stok Gudang Dikurangi']);
 
 } catch (Exception $e) {
-    // 3. ROLLBACK (Batalkan semua jika ada error sekecil apapun di salah satu langkah)
     $pdo->rollBack();
-
-    http_response_code(500);
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Gagal menyimpan database: ' . $e->getMessage(),
-        'trace' => $e->getTraceAsString() // Untuk debug
-    ]);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

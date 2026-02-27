@@ -10,28 +10,24 @@ $username = $data['username'] ?? '';
 $password = $data['password'] ?? '';
 
 try {
-    // Cari user
     $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? LIMIT 1");
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    // Verifikasi (Untuk demo ini password plain text sesuai seed data Anda)
-    // Nanti ganti pakai password_verify($password, $user['password']) jika sudah di-hash
     if ($user && $password === $user['password']) {
-
-        // Simpan sesi
+        // SIMPAN SEMUA INFO PENTING KE SESSION
         $_SESSION['user'] = [
             'id' => $user['id'],
             'username' => $user['username'],
             'name' => $user['full_name'],
-            'role' => $user['role']
+            'role' => $user['role'],
+            'warehouse_name' => $user['warehouse_name'] // WAJIB ADA AGAR DATA MUNCUL
         ];
 
         echo json_encode(['status' => 'success']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Username atau Password salah']);
     }
-
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Database error']);
 }

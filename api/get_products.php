@@ -1,25 +1,28 @@
 <?php
-// Header agar browser tahu ini respon JSON
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-
 require_once '../config/database.php';
+header('Content-Type: application/json');
 
 try {
-    // PERBAIKAN: Menambahkan kolom 'code' di setelah 'id'
-    $stmt = $pdo->prepare("SELECT id, code, name, unit, base_price, fee_amount, fee_code, type FROM products ORDER BY name ASC");
-    $stmt->execute();
+    // Ambil semua produk
+    $stmt = $pdo->query("SELECT * FROM products");
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $products = $stmt->fetchAll();
+    // Ambil pemetaan stok multi-gudang
+    $stmtStock = $pdo->query("SELECT ps.product_id, w.name as warehouse_name, ps.stock FROM product_stocks ps JOIN warehouses w ON ps.warehouse_id = w.id");
+    $stocks = $stmtStock->fetchAll(PDO::FETCH_ASSOC);
 
-    // Kirim data JSON ke frontend
-    echo json_encode([
-        'status' => 'success',
-        'data' => $products
-    ]);
+    // Gabungkan stok ke dalam array produk
+    $stockMap = [];
+    foreach($stocks as $st) {
+        $stockMap[$st['product_id']][$st['warehouse_name']] = floatval($st['stock']);
+    }
 
+    foreach($products as &$p) {
+        $p['stocks'] = $stockMap[$p['id']] ?? [];
+    }
+
+    echo json_encode(['status' => 'success', 'data' => $products]);
 } catch (Exception $e) {
-    http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>
