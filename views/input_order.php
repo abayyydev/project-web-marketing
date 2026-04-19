@@ -1,16 +1,15 @@
 <?php
-// Buka akses untuk Marketing & Admin
+// File: views/input_order.php
 $userRole = $_SESSION['user']['role'] ?? '';
 ?>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
     <div class="mb-6 border-b-2 border-purple-200 pb-2">
-        <h1 class="text-2xl font-bold text-purple-900 uppercase tracking-wider">Buat Faktur Penjualan</h1>
+        <h1 class="text-2xl font-bold text-purple-900 uppercase tracking-wider">Buat Faktur Barang (KP)</h1>
         <p class="text-sm text-purple-600">Marketing: <span class="font-bold"><?= $_SESSION['user']['name'] ?></span></p>
     </div>
 
     <form id="orderForm" onsubmit="app.submitOrder(event)" class="space-y-6">
         
-        <!-- 1. PENGATURAN AWAL -->
         <div class="bg-white rounded-xl shadow-md border-t-4 border-purple-600 overflow-hidden">
             <div class="p-4 bg-purple-50 border-b border-purple-100">
                 <h2 class="font-bold text-purple-800"><i class="fas fa-tags mr-2"></i>Sumber & Gudang</h2>
@@ -47,7 +46,6 @@ $userRole = $_SESSION['user']['role'] ?? '';
             </div>
         </div>
 
-        <!-- 2. DATA PELANGGAN -->
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                 <h2 class="font-bold text-gray-700"><i class="fas fa-user mr-2 text-purple-600"></i>Data Pelanggan (KP)</h2>
@@ -62,7 +60,6 @@ $userRole = $_SESSION['user']['role'] ?? '';
             </div>
         </div>
                 
-        <!-- 3. RINCIAN BARANG & FEE -->
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="p-4 bg-purple-50 border-b border-purple-100">
                 <h3 class="font-bold text-purple-800"><i class="fas fa-box-open mr-2"></i>Rincian Produk (Barang) & Fee</h3>
@@ -87,7 +84,6 @@ $userRole = $_SESSION['user']['role'] ?? '';
                 </button>
                 
                 <div class="mt-6 pt-5 border-t border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                    <!-- INPUT FEE MANUAL -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Input Fee Rumput / MS (Rp)</label>
                         <input type="number" id="inp-fee-r" class="w-full border border-gray-300 rounded p-2 focus:ring-purple-500 font-bold text-gray-700 outline-none" value="0">
@@ -96,67 +92,18 @@ $userRole = $_SESSION['user']['role'] ?? '';
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Input Fee DC (Rp)</label>
                         <input type="number" id="inp-fee-dc" class="w-full border border-gray-300 rounded p-2 focus:ring-purple-500 font-bold text-gray-700 outline-none" value="0">
                     </div>
-                    <!-- SUBTOTAL BARANG -->
                     <div class="text-right">
-                        <span class="text-sm font-bold text-gray-600 block mb-1">Total Barang Saja:</span>
-                        <span class="text-2xl font-black text-purple-900" id="total-goods">Rp 0</span>
+                        <span class="text-sm font-bold text-gray-600 block mb-1">Total Tagihan Bersih:</span>
+                        <span class="text-3xl font-black text-purple-900" id="total-goods">Rp 0</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 4. TOGGLE INSTALASI -->
-        <div class="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition" onclick="document.getElementById('toggle-install').click()">
-            <input type="checkbox" id="toggle-install" onclick="event.stopPropagation()" class="w-6 h-6 text-purple-600 rounded focus:ring-purple-500 border-gray-300">
-            <div>
-                <label class="font-bold text-gray-800 text-sm md:text-base cursor-pointer">Sertakan Jasa Instalasi?</label>
-                <p class="text-xs text-gray-500">Centang untuk membuat Tiket Instalasi terpisah (Membuat Faktur KI).</p>
-            </div>
-        </div>
-
-        <!-- 5. FORM INSTALASI (KI) -->
-        <div id="section-install" class="hidden bg-orange-50 rounded-xl shadow-sm border border-orange-200 overflow-hidden">
-            <div class="p-4 bg-orange-100 border-b border-orange-200 flex justify-between items-center">
-                <h2 class="font-bold text-orange-800"><i class="fas fa-tools mr-2"></i>Data Instalasi (KI) - Ditagih Terpisah</h2>
-                <span class="text-xs bg-white border border-orange-300 px-2 py-1 rounded text-orange-600 font-mono font-bold" id="new-ki-id">Loading ID...</span>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-4">
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Mandor (Opsional)</label><input type="text" id="inp-mandor" class="w-full border border-gray-300 rounded p-2 bg-white outline-none focus:border-orange-500"></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tgl Pengerjaan</label><input type="date" id="inp-date-install" class="w-full border border-gray-300 rounded p-2 bg-white outline-none"></div>
-                </div>
-                <div class="space-y-4">
-                    <div class="flex gap-4">
-                        <div class="w-1/2">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Luas (m²)</label>
-                            <input type="number" step="any" min="0.1" id="inp-install-qty" oninput="app.calcInstall()" class="w-full border border-gray-300 rounded p-2 bg-white outline-none focus:border-orange-500">
-                        </div>
-                        <div class="w-1/2">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Harga Jasa/m²</label>
-                            <input type="number" id="inp-install-price" oninput="app.calcInstall()" class="w-full border border-gray-300 rounded p-2 bg-white outline-none focus:border-orange-500" value="35000">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-orange-800 uppercase mb-1">Total Tagihan Instalasi</label>
-                        <input type="text" id="inp-install-total" class="w-full border-orange-300 rounded p-2 bg-orange-100 font-bold text-orange-900 text-lg outline-none" readonly value="Rp 0">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 6. FOOTER PEMISAH KP -->
-        <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-gray-800 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
-            <div class="absolute right-0 bottom-0 opacity-5 pointer-events-none"><i class="fas fa-file-invoice text-9xl"></i></div>
-            <div class="w-full md:w-2/3 relative z-10">
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">TOTAL TAGIHAN BARANG (KP) BERSIH</label>
-                <div class="text-4xl font-black text-purple-700 leading-none mb-1" id="grand-total">Rp 0</div>
-                <div class="text-sm font-bold text-orange-600 h-5" id="info-pisah"></div>
-            </div>
-            <div class="w-full md:w-1/3 flex justify-end relative z-10">
-                <button type="submit" class="w-full md:w-auto py-4 px-8 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95">
-                    <i class="fas fa-paper-plane"></i> Proses Faktur
-                </button>
-            </div>
+        <div class="flex justify-end">
+            <button type="submit" class="w-full md:w-auto py-4 px-8 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95">
+                <i class="fas fa-paper-plane"></i> Proses Faktur Barang
+            </button>
         </div>
     </form>
 </div>
@@ -183,19 +130,8 @@ const app = {
 
         const today = new Date();
         document.getElementById('inp-date-send').valueAsDate = today;
-        document.getElementById('inp-date-install').valueAsDate = today;
-        
         this.generateKP(); 
-
         document.getElementById('inp-date-send').addEventListener('change', () => this.generateKP());
-        document.getElementById('inp-date-install').addEventListener('change', () => this.generateKI());
-
-        document.getElementById('toggle-install').addEventListener('change', (e) => {
-            const el = document.getElementById('section-install');
-            if(e.target.checked) { el.classList.remove('hidden'); this.generateKI(); } 
-            else { el.classList.add('hidden'); document.getElementById('inp-install-qty').value = ''; this.calcInstall(); }
-            this.calcGrandTotal();
-        });
     },
 
     checkTraffic: function() {
@@ -216,17 +152,6 @@ const app = {
             if(json.status === 'success') display.innerText = json.id;
         } catch(e) { display.innerText = "ERR"; }
     },
-    
-    generateKI: async function() {
-         const dateVal = document.getElementById('inp-date-install').value;
-         const display = document.getElementById('new-ki-id');
-         display.innerText = "Loading...";
-         try {
-            const res = await fetch(`api/get_next_id.php?type=ki&date=${dateVal}`);
-            const json = await res.json();
-            if(json.status === 'success') display.innerText = json.id;
-        } catch(e) { display.innerText = "ERR"; }
-    },
 
     addCartRow: function() {
         const tbody = document.getElementById('cart-items');
@@ -236,7 +161,6 @@ const app = {
         });
 
         const tr = document.createElement('tr');
-        // Penambahan field "item-size" untuk mencatat detail potongan
         tr.innerHTML = `
             <td class="pr-2 pb-2 pt-2 align-top">
                 <select class="w-full p-2.5 border border-gray-300 rounded-lg text-sm item-select outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" onchange="app.fillPrice(this)">${options}</select>
@@ -256,10 +180,8 @@ const app = {
     fillPrice: function(el) {
         const opt = el.options[el.selectedIndex];
         const price = opt.getAttribute('data-price');
-        
         el.closest('tr').querySelector('.item-qty').value = 1;
         el.closest('tr').querySelector('.item-price').value = price || '';
-        
         this.calcGoods();
     },
 
@@ -272,7 +194,6 @@ const app = {
             const stockInfo = row.querySelector('.stock-info');
             let qty = parseFloat(qtyInput.value) || 0;
             const price = parseFloat(row.querySelector('.item-price').value) || 0;
-            
             const sel = row.querySelector('.item-select');
             const pid = sel.value;
             
@@ -281,61 +202,32 @@ const app = {
                 if(product && product.type === 'goods') {
                     const maxStock = parseFloat(product.stocks[currentWh]) || 0;
                     stockInfo.innerText = `Stok: ${maxStock}`;
-                    
                     if(qty > maxStock) {
                         Swal.fire('Stok Kurang!', `Sisa di Gudang ${currentWh} hanya ${maxStock} ${product.unit}`, 'warning');
-                        qtyInput.value = maxStock;
-                        qty = maxStock;
+                        qtyInput.value = maxStock; qty = maxStock;
                     }
                 }
-
                 const sub = qty * price;
                 row.querySelector('.item-total').value = sub.toLocaleString('id-ID');
                 total += sub;
             }
         });
 
-        const display = document.getElementById('total-goods');
-        display.innerText = "Rp " + Math.round(total).toLocaleString('id-ID');
-        display.dataset.val = total;
-        
-        this.calcGrandTotal();
-    },
-
-    calcInstall: function() {
-        const qty = parseFloat(document.getElementById('inp-install-qty').value) || 0;
-        const price = parseFloat(document.getElementById('inp-install-price').value) || 0;
-        const total = qty * price;
-        const display = document.getElementById('inp-install-total');
-        display.value = "Rp " + Math.round(total).toLocaleString('id-ID');
-        display.dataset.val = total;
-        this.calcGrandTotal();
-    },
-
-    calcGrandTotal: function() {
-        const goods = parseFloat(document.getElementById('total-goods').dataset.val) || 0;
         const mpFee = parseFloat(document.getElementById('inp-mp-fee').value) || 0;
-        const grandKP = goods - mpFee;
-        
-        const hasInstall = document.getElementById('toggle-install').checked;
-        const installKI = hasInstall ? (parseFloat(document.getElementById('inp-install-total').dataset.val) || 0) : 0;
-        
-        document.getElementById('grand-total').innerText = "Rp " + Math.round(grandKP).toLocaleString('id-ID');
-        
-        const infoPisah = document.getElementById('info-pisah');
-        if (installKI > 0) {
-            infoPisah.innerHTML = `<i class="fas fa-plus-circle"></i> Nilai Jasa Instalasi (KI): Rp ${Math.round(installKI).toLocaleString('id-ID')} <span class="text-xs text-gray-400 font-normal">(Ditagih Terpisah)</span>`;
-        } else {
-            infoPisah.innerHTML = '';
-        }
+        const grandTotal = total - mpFee;
 
-        return { goods, install: installKI, mpFee, grandKP };
+        const display = document.getElementById('total-goods');
+        display.innerText = "Rp " + Math.round(grandTotal).toLocaleString('id-ID');
+        display.dataset.val = grandTotal;
+        display.dataset.pure = total;
     },
+
+    calcGrandTotal: function() { this.calcGoods(); },
 
     submitOrder: async function(e) {
         e.preventDefault();
-        const totalsData = this.calcGrandTotal();
-        const hasInstall = document.getElementById('toggle-install').checked;
+        const grandTotal = parseFloat(document.getElementById('total-goods').dataset.val) || 0;
+        const mpFee = parseFloat(document.getElementById('inp-mp-fee').value) || 0;
 
         const items = [];
         const rows = document.querySelectorAll('#cart-items tr');
@@ -345,13 +237,11 @@ const app = {
             if(pid) {
                 const opt = sel.options[sel.selectedIndex];
                 const sizeInput = row.querySelector('.item-size').value.trim();
-                
-                // MENGGABUNGKAN UKURAN KE NAMA PRODUK
                 const finalProductName = sizeInput ? `${opt.text} [Ukuran: ${sizeInput}]` : opt.text;
 
                 items.push({
                     product_id: pid, 
-                    name: finalProductName, // Nama yang dikirim ke database sudah mengandung ukuran
+                    name: finalProductName, 
                     qty: row.querySelector('.item-qty').value,
                     price: row.querySelector('.item-price').value,
                     sub: parseFloat(row.querySelector('.item-qty').value) * parseFloat(row.querySelector('.item-price').value)
@@ -361,17 +251,13 @@ const app = {
 
         if(items.length === 0) return Swal.fire('Oops', "Pilih minimal 1 produk", 'warning');
 
-        Swal.fire({title: 'Memproses Pemesanan...', allowOutsideClick: false});
+        Swal.fire({title: 'Memproses Faktur Barang...', allowOutsideClick: false});
         Swal.showLoading();
-
-        // Ambil Inputan Fee Manual
-        const feeR = parseFloat(document.getElementById('inp-fee-r').value) || 0;
-        const feeDc = parseFloat(document.getElementById('inp-fee-dc').value) || 0;
 
         const payload = {
             marketing_username: this.username,
             kp_id: document.getElementById('new-kp-id').innerText,
-            ki_id: hasInstall ? document.getElementById('new-ki-id').innerText : '-',
+            ki_id: '-', // Tidak buat instalasi disini
             brand: document.getElementById('inp-brand').value,
             traffic: document.getElementById('inp-traffic').value,
             wh: document.getElementById('inp-wh').value,
@@ -381,15 +267,9 @@ const app = {
             maps: document.getElementById('inp-maps').value,
             date_send: document.getElementById('inp-date-send').value,
             items: items,
-            install_info: hasInstall ? {
-                mandor: document.getElementById('inp-mandor').value,
-                date: document.getElementById('inp-date-install').value,
-                qty: document.getElementById('inp-install-qty').value,
-                price: document.getElementById('inp-install-price').value,
-                total: totalsData.install
-            } : null,
-            totals: { grand: totalsData.grandKP, marketplace_fee: totalsData.mpFee },
-            fees: { r: feeR, dc: feeDc }
+            install_info: null,
+            totals: { grand: grandTotal, marketplace_fee: mpFee },
+            fees: { r: parseFloat(document.getElementById('inp-fee-r').value) || 0, dc: parseFloat(document.getElementById('inp-fee-dc').value) || 0 }
         };
 
         try {
@@ -397,11 +277,9 @@ const app = {
             const result = await res.json();
             
             if(result.status === 'success') {
-                Swal.fire({icon: 'success', title: 'Faktur Dibuat!', timer: 1500, showConfirmButton: false})
-                .then(() => { window.location.href = 'index.php?page=input_order'; });
-            } else {
-                Swal.fire('Sistem Menolak!', result.message, 'error');
-            }
+                Swal.fire({icon: 'success', title: 'Faktur Barang Dibuat!', text: 'Silakan ke menu Instalasi untuk menambah Jasa.', timer: 2000, showConfirmButton: false})
+                .then(() => { window.location.href = 'index.php?page=faktur'; });
+            } else { Swal.fire('Sistem Menolak!', result.message, 'error'); }
         } catch(err) { Swal.fire('Error', 'Terjadi kesalahan jaringan', 'error'); }
     }
 };

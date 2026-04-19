@@ -56,12 +56,11 @@ $isAdminPusat = ($userRole === 'super_admin' || $uLogin === 'admin' || $userRole
             </select>
 
             <!-- Filter Cabang (Hanya untuk Admin Pusat/Keuangan) -->
-            <?php if($isAdminPusat): ?>
+
             <select id="filter-cabang" onchange="filterTable()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-purple-700 font-bold bg-purple-50 focus:ring-purple-500 outline-none shadow-sm transition">
                 <option value="">-- Semua Cabang --</option>
                 <!-- Data diisi via JS -->
             </select>
-            <?php endif; ?>
         </div>
 
         <div class="flex gap-2">
@@ -175,7 +174,7 @@ const rowsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadWorkKI();
-    if(isAdminPusat) loadCabangFilter();
+ loadCabangFilter();
 });
 
 window.onclick = function(event) {
@@ -377,12 +376,7 @@ function filterTable() {
     const filterCabangEl = document.getElementById('filter-cabang');
     
     // Logika Kunci Filter Cabang
-    let cabangVal = '';
-    if (isGudang) {
-        cabangVal = myWarehouse; // Admin gudang dikunci ke cabangnya sendiri
-    } else if (filterCabangEl) {
-        cabangVal = filterCabangEl.value; // Admin Pusat ambil dari dropdown
-    }
+    let cabangVal = filterCabangEl ? filterCabangEl.value : '';
 
     const filtered = allData.filter(i => {
         const matchText = i.customer_name.toLowerCase().includes(term) || i.ki_number.toLowerCase().includes(term) || (i.mandor_name && i.mandor_name.toLowerCase().includes(term));

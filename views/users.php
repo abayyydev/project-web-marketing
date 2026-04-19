@@ -57,7 +57,7 @@ if(($_SESSION['user']['role'] ?? '') !== 'super_admin') {
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Role / Jabatan</label>
                 <select id="u-role" onchange="checkRole()" class="w-full border rounded-lg p-2.5 outline-none focus:ring-purple-500 font-bold text-purple-700 bg-purple-50">
                     <option value="marketing">Marketing (Sales)</option>
-                    <option value="admin_gudang">Admin Gudang (Cabang)</option>
+                    <option value="admin_gudang">Admin Gudang</option>
                     <option value="keuangan">Admin Keuangan (Pusat)</option>
                     <option value="super_admin">Super Admin (Pemilik)</option>
                 </select>

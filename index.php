@@ -44,6 +44,7 @@ $isSuper = ($role === 'super_admin' || $role === 'admin' || $uLogin === 'admin')
             // MAIN MENU (SEMUA BISA AKSES, READ-ONLY DIATUR DI DALAM FILE VIEW)
             case 'faktur': require_once 'views/faktur.php'; break;
             case 'input_order': require_once 'views/input_order.php'; break;
+            case 'input_install': require_once 'views/input_install.php'; break;
             case 'edit_order': require_once 'views/edit_order.php'; break;
             case 'penerimaan': require_once 'views/penerimaan.php'; break;
             case 'pengepakan': require_once 'views/pengepakan.php'; break;

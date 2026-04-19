@@ -38,17 +38,12 @@ $canCreate = ($isMarketing || $isAdminPusat);
             <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
         </div>
         
-        <?php if(!$isGudang): ?>
+       
         <div class="w-full md:w-auto">
             <select id="filter-cabang" onchange="filterTable()" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 bg-gray-50 focus:ring-purple-500 outline-none font-bold shadow-sm">
                 <option value="">-- Semua Cabang --</option>
             </select>
         </div>
-        <?php else: ?>
-            <div class="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2 justify-center border border-purple-200">
-                <i class="fas fa-warehouse text-sm"></i> CABANG: <?= strtoupper($userWh) ?> (Read-Only)
-            </div>
-        <?php endif; ?>
     </div>
 
     <!-- TABLE DENGAN PAGINASI -->
@@ -188,7 +183,7 @@ const rowsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadFaktur();
-    if(!isGudang) loadCabangFilter();
+    loadCabangFilter();
 });
 
 window.onclick = function(event) {

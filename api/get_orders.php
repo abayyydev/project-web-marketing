@@ -20,15 +20,6 @@ try {
         // Marketing hanya boleh melihat pesanannya sendiri
         $sql .= " AND o.marketing_id = ?";
         $params[] = $userId;
-    } elseif ($role === 'admin_gudang') {
-        // Admin Gudang HANYA boleh melihat data cabang dia saja
-        if (!empty($userWarehouse)) {
-            $sql .= " AND o.warehouse_source = ?";
-            $params[] = $userWarehouse;
-        } else {
-            // Jika dia admin gudang tapi tidak punya penugasan cabang, tampilkan kosong
-            $sql .= " AND 1=0";
-        }
     }
     // super_admin dan keuangan bebas melihat semua cabang
 

@@ -47,10 +47,8 @@ try {
         $stmtCheck->execute([$installId]);
         $currentStatus = $stmtCheck->fetchColumn();
 
-        // Jika ini pembayaran pertama, jadwalkan. Jika cicilan lanjutan, biarkan statusnya.
         $newStatus = ($currentStatus === 'Menunggu Verifikasi') ? 'Dijadwalkan' : $currentStatus;
 
-        // Tandai bahwa Keuangan sudah memvalidasinya
         $stmt = $pdo->prepare("UPDATE installations SET is_finance_verified = 1, status = ? WHERE id = ?");
         $stmt->execute([$newStatus, $installId]);
 
@@ -82,14 +80,42 @@ try {
             echo json_encode(['status' => 'error', 'message' => 'Gagal mengupload foto. Format tidak sesuai.']);
         }
     } 
-    
+
+    // 4. EDIT INSTALASI
+    elseif ($action === 'edit') {
+        $workDate = $data['work_date'] ?? null;
+        $areaSize = $data['area_size'] ?? 0;
+        $servicePrice = $data['service_price'] ?? 0;
+        $totalPrice = $data['total_price'] ?? 0;
+
+        $stmt = $pdo->prepare("UPDATE installations SET mandor_name = ?, work_date = ?, area_size = ?, service_price = ?, total_price = ? WHERE id = ?");
+        $stmt->execute([$mandor, $workDate, $areaSize, $servicePrice, $totalPrice, $installId]);
+
+        echo json_encode(['status' => 'success', 'message' => 'Data instalasi berhasil diperbarui.']);
+    }
+
+    // 5. HAPUS INSTALASI
+    elseif ($action === 'delete') {
+        $orderId = $data['order_id'] ?? 0;
+        
+        // Hapus dari tabel instalasi
+        $stmtDel = $pdo->prepare("DELETE FROM installations WHERE id = ?");
+        $stmtDel->execute([$installId]);
+
+        // Hapus referensi (ki_number) di tabel orders
+        if ($orderId) {
+            $pdo->prepare("UPDATE orders SET ki_number = NULL WHERE id = ?")->execute([$orderId]);
+        }
+
+        echo json_encode(['status' => 'success', 'message' => 'Faktur instalasi berhasil dibatalkan dan dihapus.']);
+    }
+
     // JIKA AKSI TIDAK DITEMUKAN
     else {
         echo json_encode(['status' => 'error', 'message' => 'Aksi tidak valid atau tidak dikenal oleh server.']);
     }
     
 } catch (Exception $e) {
-    // Tangkap error Database
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

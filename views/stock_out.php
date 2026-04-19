@@ -13,11 +13,7 @@ $isGudang = ($role === 'admin_gudang');
             <p class="text-sm text-gray-500">Persediaan > <span class="text-purple-600 font-bold uppercase">Riwayat Pengeluaran (Outbound)</span></p>
         </div>
         <div class="flex items-center gap-3">
-            <?php if($isGudang): ?>
-            <div class="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg border border-purple-200 text-xs font-bold shadow-sm uppercase">
-                <i class="fas fa-warehouse mr-1"></i> Cabang: <?= strtoupper($userWh) ?>
-            </div>
-            <?php endif; ?>
+         
             <div class="text-xs bg-gray-100 text-gray-500 px-4 py-2 rounded-lg border border-gray-200 font-bold shadow-sm uppercase flex items-center gap-2">
                 <i class="fas fa-lock"></i> Read-Only
             </div>
@@ -31,14 +27,13 @@ $isGudang = ($role === 'admin_gudang');
             <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
         </div>
         
-        <?php if(!$isGudang): ?>
+
         <div class="w-full md:w-auto">
             <select id="filter-cabang" onchange="filterTable()" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 bg-gray-50 focus:ring-purple-500 focus:border-purple-500 outline-none font-bold shadow-sm transition">
                 <option value="">-- Semua Cabang --</option>
                 <!-- Opsi di-load via JS -->
             </select>
         </div>
-        <?php endif; ?>
     </div>
 
     <!-- TABLE DENGAN PAGINASI -->
@@ -81,7 +76,7 @@ const rowsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
-    if(!isGudang) loadCabangFilter();
+loadCabangFilter();
 });
 
 async function loadCabangFilter() {

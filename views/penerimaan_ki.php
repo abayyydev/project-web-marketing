@@ -16,7 +16,7 @@ $isGudang = ($userRole === 'admin_gudang');
             <p class="text-sm text-gray-500">Instalasi (KI) > <span class="text-purple-600 font-bold uppercase">Validasi Keuangan</span></p>
         </div>
         
-        <?php if($isGudang): ?>
+        
             <div class="bg-purple-100 text-purple-800 px-5 py-2.5 rounded-xl text-xs font-bold border border-purple-200 shadow-sm flex items-center gap-3">
                 <i class="fas fa-warehouse text-lg"></i> 
                 <div class="flex flex-col text-left">
@@ -24,7 +24,7 @@ $isGudang = ($userRole === 'admin_gudang');
                     <span><?= strtoupper($userWh) ?> (Read-Only)</span>
                 </div>
             </div>
-        <?php elseif($isAdminPusat): ?>
+        <?php if($isAdminPusat): ?>
             <div class="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-3">
                 <i class="fas fa-money-check-alt text-lg"></i>
                 <div class="flex flex-col text-left">
@@ -52,12 +52,11 @@ $isGudang = ($userRole === 'admin_gudang');
             </select>
 
             <!-- Filter Cabang Dinamis (Khusus Pusat) -->
-            <?php if(!$isGudang): ?>
+
             <select id="filter-cabang" onchange="filterTable()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 font-bold bg-gray-50 focus:ring-purple-500 outline-none shadow-sm transition">
                 <option value="">-- Semua Cabang --</option>
                 <!-- Data cabang dimuat otomatis via JS -->
             </select>
-            <?php endif; ?>
         </div>
 
         <?php if($isAdminPusat): ?>
@@ -120,7 +119,7 @@ const rowsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadReceiptsKI();
-    if(isAdminPusat) loadCabangFilter(); // Admin pusat butuh filter cabang
+  loadCabangFilter(); // Admin pusat butuh filter cabang
 });
 
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -316,12 +315,7 @@ function filterTable() {
     const filterEl = document.getElementById('filter-cabang');
     
     // LOGIKA FILTER KETAT CABANG
-    let cabangPilihan = '';
-    if (isGudang) {
-        cabangPilihan = myWarehouse; // Jika admin gudang, paksa filter sesuai nama gudangnya
-    } else if (filterEl) {
-        cabangPilihan = filterEl.value; // Jika pusat, ambil dari dropdown
-    }
+    let cabangPilihan = filterEl ? filterEl.value : '';
 
     const filtered = allData.filter(i => {
         const matchText = i.customer_name.toLowerCase().includes(term) || i.ki_number.toLowerCase().includes(term);

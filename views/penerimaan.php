@@ -20,10 +20,8 @@ $isGudang = ($userRole === 'admin_gudang');
         <?php if($isGudang): ?>
             <div class="bg-purple-100 text-purple-800 px-5 py-2.5 rounded-xl text-xs font-bold border border-purple-200 shadow-sm flex items-center gap-3">
                 <i class="fas fa-warehouse text-lg"></i> 
-                <div class="flex flex-col text-left">
-                    <span class="opacity-70 text-[9px] uppercase">Monitoring Cabang</span>
-                    <span><?= strtoupper($userWh) ?> (Read-Only)</span>
-                </div>
+                <span class="opacity-70 text-[9px] uppercase">Monitoring Semua Cabang</span>
+<span>AKSES GUDANG (Read-Only)</span>
             </div>
         <?php elseif($isAdminPusat): ?>
             <div class="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-3">
@@ -53,19 +51,16 @@ $isGudang = ($userRole === 'admin_gudang');
             </select>
 
             <!-- Filter Cabang (Hanya muncul untuk Admin Pusat/Keuangan) -->
-            <?php if($isAdminPusat): ?>
+           
             <select id="filter-cabang" onchange="filterTable()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold text-gray-700 bg-gray-50 outline-none focus:ring-purple-500 shadow-sm transition">
                 <option value="">-- Semua Cabang --</option>
                 <!-- Opsi cabang dimuat via JS -->
             </select>
-            <?php endif; ?>
         </div>
 
-        <?php if($isAdminPusat): ?>
         <div class="text-[10px] text-gray-400 font-bold uppercase italic text-right hidden lg:block">
             <i class="fas fa-info-circle mr-1 text-purple-500"></i> Klik centang hijau jika dana sudah masuk mutasi.
         </div>
-        <?php endif; ?>
     </div>
 
     <!-- TABLE DENGAN PAGINASI -->
@@ -121,7 +116,7 @@ const rowsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadReceipts();
-    if(isAdminPusat) loadCabangFilter();
+  loadCabangFilter();
 });
 
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }

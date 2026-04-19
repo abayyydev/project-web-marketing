@@ -7,8 +7,11 @@ $uLogin = $_SESSION['user']['username'] ?? '';
 $isGudang = ($userRole === 'admin_gudang');
 $isMarketing = ($userRole === 'marketing');
 $isAdminPusat = ($userRole === 'super_admin' || $userRole === 'admin' || $uLogin === 'admin' || $userRole === 'keuangan');
+
+// Siapa yang boleh membuat/mengedit/menghapus Faktur Instalasi Baru
+$canCreate = ($isMarketing || $isAdminPusat);
 ?>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
     
     <!-- HEADER -->
     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b-2 border-purple-200 pb-4">
@@ -20,6 +23,11 @@ $isAdminPusat = ($userRole === 'super_admin' || $userRole === 'admin' || $uLogin
             <button onclick="loadKI()" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg font-bold shadow-sm transition flex items-center gap-2 text-sm w-full md:w-auto justify-center">
                 <i class="fas fa-sync-alt"></i> Refresh Data
             </button>
+            <?php if($canCreate): ?>
+            <a href="index.php?page=input_install" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-lg font-bold shadow transition flex items-center justify-center gap-2 text-sm w-full md:w-auto">
+                <i class="fas fa-plus"></i> Buat Instalasi Baru
+            </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -29,19 +37,19 @@ $isAdminPusat = ($userRole === 'super_admin' || $userRole === 'admin' || $uLogin
             <input type="text" id="search" onkeyup="filterTable()" placeholder="Cari No KI / Pelanggan..." class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 outline-none shadow-sm transition">
             <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
         </div>
-        
-        <?php if(!$isGudang): ?>
-        <div class="w-full md:w-auto">
-            <select id="filter-cabang" onchange="filterTable()" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 bg-gray-50 focus:ring-purple-500 outline-none font-bold shadow-sm">
+     
+        <div class="w-full md:w-auto flex items-center gap-3">
+            <?php if(!$isGudang): ?>
+            <select id="filter-cabang" onchange="filterTable()" class="w-full md:w-48 border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 bg-gray-50 focus:ring-purple-500 outline-none font-bold shadow-sm">
                 <option value="">-- Semua Cabang --</option>
                 <!-- Opsi cabang dimuat via JS -->
             </select>
+            <?php else: ?>
+            <div class="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg text-xs font-bold border border-purple-200 flex items-center justify-center gap-2 shadow-sm">
+                <i class="fas fa-warehouse"></i><?= strtoupper($userWh) ?> (Read-Only)
+            </div>
+            <?php endif; ?>
         </div>
-        <?php else: ?>
-        <div class="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg text-xs font-bold border border-purple-200 flex items-center justify-center gap-2 shadow-sm">
-            <i class="fas fa-warehouse"></i> CABANG: <?= strtoupper($userWh) ?> (Read-Only)
-        </div>
-        <?php endif; ?>
     </div>
 
     <!-- TABLE DENGAN PAGINASI -->
@@ -68,6 +76,50 @@ $isAdminPusat = ($userRole === 'super_admin' || $userRole === 'admin' || $uLogin
         <div id="pagination-container" class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-xs text-gray-500 font-bold" id="page-info">Memuat paginasi...</div>
             <div class="flex gap-1" id="page-buttons"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDIT INSTALASI (NEW) -->
+<div id="modal-edit-ki" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden transform transition-all">
+        <div class="bg-yellow-50 px-6 py-4 border-b border-yellow-200 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-yellow-800"><i class="fas fa-edit mr-2"></i>Edit Jasa Instalasi</h3>
+            <button onclick="closeModal('modal-edit-ki')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="edit-ki-id">
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Mandor</label>
+                <input type="text" id="edit-mandor" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-yellow-500 font-bold">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tgl Pengerjaan</label>
+                <input type="date" id="edit-date" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-yellow-500 font-bold">
+            </div>
+            
+            <div class="flex gap-4">
+                <div class="w-1/2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Luas (m²)</label>
+                    <input type="number" step="any" min="0.1" id="edit-qty" oninput="calcEditKI()" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-yellow-500 font-bold text-center">
+                </div>
+                <div class="w-1/2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Harga Jasa/m²</label>
+                    <input type="number" id="edit-price" oninput="calcEditKI()" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-yellow-500 font-bold">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-yellow-800 uppercase mb-1">Total Biaya Baru</label>
+                <input type="text" id="edit-total-display" class="w-full border-yellow-300 rounded-lg p-3 bg-yellow-100 font-black text-yellow-900 text-lg outline-none" readonly value="Rp 0">
+                <input type="hidden" id="edit-total-val" value="0">
+            </div>
+
+            <button onclick="submitEditKI()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-black py-4 rounded-xl shadow-lg mt-4 transition transform active:scale-95 flex items-center justify-center gap-2">
+                <i class="fas fa-save"></i> SIMPAN PERUBAHAN
+            </button>
         </div>
     </div>
 </div>
@@ -117,8 +169,8 @@ $isAdminPusat = ($userRole === 'super_admin' || $userRole === 'admin' || $uLogin
 <!-- MODAL WA -->
 <div id="modal-wa" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div class="p-4 border-b bg-green-50 flex justify-between items-center">
-            <h3 class="font-bold text-green-900"><i class="fab fa-whatsapp mr-2 text-green-600 text-xl"></i>Format WhatsApp</h3>
+        <div class="p-4 border-b bg-purple-50 flex justify-between items-center">
+            <h3 class="font-bold text-purple-900"><i class="fab fa-whatsapp mr-2 text-purple-600 text-xl"></i>Format WhatsApp</h3>
             <button onclick="closeModal('modal-wa')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
         </div>
         
@@ -163,7 +215,8 @@ let allData = [];
 let currentFilteredData = [];
 const currentUserRole = "<?= $userRole ?>";
 const isGudang = <?= $isGudang ? 'true' : 'false' ?>;
-const myWarehouse = "<?= $userWh ?>"; 
+const isAdminPusat = <?= $isAdminPusat ? 'true' : 'false' ?>;
+const canCreate = <?= $canCreate ? 'true' : 'false' ?>;
 let currentOrderForWA = null; 
 
 // VARIABEL PAGINASI
@@ -226,7 +279,7 @@ function renderTable(data) {
         return;
     }
 
-    // LOGIKA PAGINASI: Potong data berdasarkan halaman
+    // LOGIKA PAGINASI
     const totalPages = Math.ceil(data.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
@@ -265,13 +318,26 @@ function renderTable(data) {
 
         let actionHTML = `<div class="relative inline-block text-left">
             <button onclick="toggleAction(${i.id})" class="drop-btn text-gray-400 hover:text-purple-600 p-2 rounded-full hover:bg-purple-50 transition"><i class="fas fa-ellipsis-v pointer-events-none"></i></button>
-            <div id="action-${i.id}" class="dropdown-content hidden origin-top-right absolute right-0 mt-1 w-48 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 border border-gray-100 py-1">`;
+            <div id="action-${i.id}" class="dropdown-content hidden origin-top-right absolute right-0 mt-1 w-52 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 border border-gray-100 py-1">`;
         
         let isPelunasan = (dp > 0 && sisa > 0);
         let tagihanYangHarusDibayar = isPelunasan ? sisa : total;
 
+        // MENU EDIT DAN HAPUS (KHUSUS ADMIN/MARKETING)
+        if(canCreate) {
+            actionHTML += `<a href="#" onclick="openEditModal(${i.id}, '${i.mandor_name}', '${i.work_date}', ${i.area_size}, ${i.service_price})" class="block px-4 py-2.5 text-xs text-yellow-600 hover:bg-yellow-50 font-bold transition uppercase tracking-tighter"><i class="fas fa-edit w-5"></i> Edit Instalasi</a>`;
+            actionHTML += `<a href="#" onclick="deleteInstall(${i.id}, ${i.order_id})" class="block px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 font-bold transition uppercase tracking-tighter"><i class="fas fa-trash w-5"></i> Batalkan / Hapus</a>`;
+            actionHTML += `<div class="border-t border-gray-100 my-1"></div>`;
+        }
+
+        // Lihat Rincian Rumput dari Halaman KI
+        actionHTML += `<a href="#" onclick="viewDetail(${i.order_id}, '${i.ki_number}')" class="block px-4 py-2.5 text-xs text-orange-600 hover:bg-orange-50 font-bold transition uppercase tracking-tighter"><i class="fas fa-box-open w-5"></i> Cek Barang Bawaan</a>`;
+        actionHTML += `<div class="border-t border-gray-100 my-1"></div>`;
+
+        // Format WA
         actionHTML += `<a href="#" onclick="showWA(${i.id})" class="block px-4 py-2.5 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 font-bold transition uppercase tracking-tighter"><i class="fab fa-whatsapp w-5"></i> Format WA & Survey</a>`;
 
+        // Tambah Pembayaran
         if(currentUserRole === 'marketing') {
             if(i.pay_status !== 'Lunas' && i.status !== 'Batal') {
                 actionHTML += `<a href="#" onclick="openPaymentModal(${i.id}, ${tagihanYangHarusDibayar}, ${dp}, ${total})" class="block px-4 py-2.5 text-xs text-gray-700 hover:bg-purple-50 hover:text-purple-700 font-bold transition uppercase tracking-tighter"><i class="fas fa-hand-holding-usd w-5"></i> Tambah Cicilan</a>`;
@@ -290,6 +356,7 @@ function renderTable(data) {
                 <td class="px-6 py-4">
                     <div class="text-gray-900 uppercase font-black text-xs">${i.customer_name}</div>
                     <div class="text-[9px] text-gray-400 uppercase font-bold mt-1">Marketing: ${i.marketing_name}</div>
+                    ${payInfo}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-700 font-medium">
                     Mandor: <span class="font-bold text-gray-900">${i.mandor_name || '-'}</span><br>
@@ -303,7 +370,6 @@ function renderTable(data) {
     });
     tbody.innerHTML = rowsHTML;
     
-    // Tampilkan tombol paginasi
     renderPagination(data.length, totalPages);
 }
 
@@ -323,14 +389,12 @@ function renderPagination(totalItems, totalPages) {
 
     let html = '';
     
-    // Tombol Prev
     if(currentPage > 1) {
         html += `<button onclick="changePage(${currentPage - 1})" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 transition text-xs font-bold shadow-sm"><i class="fas fa-chevron-left"></i></button>`;
     } else {
         html += `<button disabled class="px-3 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-gray-400 text-xs font-bold cursor-not-allowed"><i class="fas fa-chevron-left"></i></button>`;
     }
 
-    // Nomor Halaman
     for(let p = 1; p <= totalPages; p++) {
         if(p === currentPage) {
             html += `<button class="px-3 py-1.5 rounded-lg bg-purple-600 border border-purple-600 text-white text-xs font-bold shadow-md">${p}</button>`;
@@ -341,7 +405,6 @@ function renderPagination(totalItems, totalPages) {
         }
     }
 
-    // Tombol Next
     if(currentPage < totalPages) {
         html += `<button onclick="changePage(${currentPage + 1})" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 transition text-xs font-bold shadow-sm"><i class="fas fa-chevron-right"></i></button>`;
     } else {
@@ -353,19 +416,14 @@ function renderPagination(totalItems, totalPages) {
 
 function changePage(page) {
     currentPage = page;
-    renderTable(currentFilteredData); // Gunakan data hasil filter, bukan allData
+    renderTable(currentFilteredData); 
 }
 
 function filterTable() {
     const term = document.getElementById('search').value.toLowerCase();
     const filterEl = document.getElementById('filter-cabang');
     
-    let cabangPilihan = '';
-    if (isGudang) {
-        cabangPilihan = myWarehouse; 
-    } else if (filterEl) {
-        cabangPilihan = filterEl.value; 
-    }
+    let cabangPilihan = filterEl ? filterEl.value : '';
 
     const filtered = allData.filter(i => {
         const matchText = i.customer_name.toLowerCase().includes(term) || i.ki_number.toLowerCase().includes(term);
@@ -374,10 +432,139 @@ function filterTable() {
         return matchText && matchCabang;
     });
 
-    currentFilteredData = filtered; // Simpan data yang sedang terfilter
-    currentPage = 1; // Reset selalu ke halaman 1 saat difilter
+    currentFilteredData = filtered; 
+    currentPage = 1; 
     renderTable(currentFilteredData);
 }
+
+// --- FUNGSI EDIT DAN HAPUS INSTALASI ---
+function openEditModal(id, mandor, date, qty, price) {
+    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.add('hidden'));
+    
+    document.getElementById('edit-ki-id').value = id;
+    document.getElementById('edit-mandor').value = (mandor !== 'null' && mandor) ? mandor : '';
+    document.getElementById('edit-date').value = date;
+    document.getElementById('edit-qty').value = qty;
+    document.getElementById('edit-price').value = price;
+    
+    calcEditKI();
+    document.getElementById('modal-edit-ki').classList.remove('hidden');
+}
+
+function calcEditKI() {
+    const qty = parseFloat(document.getElementById('edit-qty').value) || 0;
+    const price = parseFloat(document.getElementById('edit-price').value) || 0;
+    const total = qty * price;
+    
+    document.getElementById('edit-total-val').value = total;
+    document.getElementById('edit-total-display').value = "Rp " + Math.round(total).toLocaleString('id-ID');
+}
+
+async function submitEditKI() {
+    const id = document.getElementById('edit-ki-id').value;
+    const mandor = document.getElementById('edit-mandor').value;
+    const date = document.getElementById('edit-date').value;
+    const qty = document.getElementById('edit-qty').value;
+    const price = document.getElementById('edit-price').value;
+    const total = document.getElementById('edit-total-val').value;
+
+    if(!qty || !price) return Swal.fire('Peringatan', 'Luas dan Harga Jasa wajib diisi!', 'warning');
+
+    Swal.fire({title: 'Menyimpan Perubahan...', allowOutsideClick: false}); Swal.showLoading();
+    
+    try {
+        const res = await fetch('api/install_action.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                action: 'edit', 
+                install_id: id, 
+                mandor_name: mandor, 
+                work_date: date, 
+                area_size: qty, 
+                service_price: price, 
+                total_price: total 
+            })
+        });
+        const json = await res.json();
+        if(json.status === 'success') {
+            closeModal('modal-edit-ki');
+            Swal.fire('Berhasil!', 'Data instalasi telah diperbarui.', 'success');
+            loadKI();
+        } else { Swal.fire('Gagal', json.message, 'error'); }
+    } catch(e) { Swal.fire('Error', 'Kesalahan jaringan server', 'error'); }
+}
+
+function deleteInstall(id, orderId) {
+    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.add('hidden'));
+    
+    Swal.fire({
+        title: 'Hapus Faktur Instalasi?',
+        text: 'Faktur Instalasi akan dihapus, namun Faktur Barang (KP) akan tetap aman di sistem.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Ya, Hapus/Batalkan!'
+    }).then((res) => {
+        if(res.isConfirmed) {
+            Swal.fire({title: 'Menghapus...', allowOutsideClick: false}); Swal.showLoading();
+            fetch('api/install_action.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ action: 'delete', install_id: id, order_id: orderId })
+            }).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    Swal.fire('Dihapus!', d.message, 'success');
+                    loadKI();
+                } else Swal.fire('Error', d.message, 'error');
+            }).catch(e => Swal.fire('Error', 'Kesalahan jaringan', 'error'));
+        }
+    });
+}
+
+
+// --- FUNGSI LIHAT RINCIAN BARANG (DARI HALAMAN KI) ---
+async function viewDetail(orderId, kiNumber) {
+    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.add('hidden'));
+    Swal.fire({ title: 'Memuat Detail Barang...', allowOutsideClick: false });
+    Swal.showLoading();
+    try {
+        const res = await fetch(`api/get_order_detail.php?id=${orderId}`);
+        const json = await res.json();
+        if(json.status === 'success') {
+            const items = json.data.items;
+            
+            let list = `<div class="text-left space-y-3 mt-2">
+                            <div class="font-bold text-center text-orange-600 text-xs mb-1">Daftar Barang untuk Instalasi:</div>
+                            <div class="font-black text-center text-purple-800 font-mono mb-4 border-b border-purple-200 pb-2">${kiNumber}</div>`;
+            
+            items.forEach(i => { 
+                let sizeBadge = '';
+                let rawName = i.product_name;
+
+                if (i.item_note) {
+                    const match = i.item_note.match(/\[Ukuran:\s*(.+?)\]/i);
+                    if (match && match[1]) {
+                        sizeBadge = `<div class="mt-2 bg-orange-100 text-orange-800 px-3 py-1.5 rounded-lg text-[11px] font-black inline-flex shadow-sm"><i class="fas fa-cut mr-1.5"></i> POTONG: ${match[1]}</div>`;
+                    }
+                    rawName = i.item_note.replace(/\s*\[Ukuran:\s*(.+?)\]/i, '');
+                }
+
+                list += `
+                <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl shadow-sm">
+                    <div class="font-black text-gray-800 text-sm">${rawName}</div>
+                    <div class="text-xs text-gray-600 mt-1">Bawa / Siapkan: <span class="font-black text-purple-700">${parseFloat(i.qty)} ${i.unit}</span></div>
+                    ${sizeBadge}
+                </div>`; 
+            });
+            list += '</div>';
+            Swal.fire({ title: 'Rincian Barang', html: list, confirmButtonText: 'Tutup', confirmButtonColor: '#ea580c' });
+        } else {
+            Swal.fire('Error', json.message, 'error');
+        }
+    } catch(e) { Swal.fire('Error', 'Gagal memuat data', 'error'); }
+}
+
 
 // --- FUNGSI GENERATE WA & SURVEY ---
 async function showWA(id) {

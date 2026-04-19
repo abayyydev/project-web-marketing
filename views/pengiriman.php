@@ -20,10 +20,8 @@ $isMarketing = ($userRole === 'marketing');
         
         <div class="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-3">
             <i class="fas fa-truck-moving text-lg"></i> 
-            <div class="flex flex-col text-left">
-                <span class="opacity-70 text-[9px] uppercase">Status Logistik</span>
-                <span><?= $isGudang ? 'GUDANG: '.strtoupper($userWh) : ($isMarketing ? 'PROGRES SALES' : 'PUSAT / NASIONAL') ?></span>
-            </div>
+            <span class="opacity-70 text-[9px] uppercase">Monitoring Cabang</span>
+<span><?= strtoupper($userWh) ?> (Read-Only)</span>
         </div>
     </div>
 

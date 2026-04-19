@@ -1,34 +1,36 @@
 <?php
+// File: api/get_next_id.php
+session_start();
 header('Content-Type: application/json');
 require_once '../config/database.php';
 
-$type = $_GET['type'] ?? 'kp'; // 'kp' atau 'ki'
-$date = $_GET['date'] ?? date('Y-m-d');
+$type = $_GET['type'] ?? 'kp';
+$prefix = strtoupper($type);
+
+// Ambil tanggal hari ini
+$todayDb = date('Y-m-d');
+$todayFormat = date('dmY');
 
 try {
-    // 1. Ambil Counter Terakhir dari DB
-    $key = ($type === 'ki') ? 'ki_counter' : 'kp_counter';
-    $stmt = $pdo->prepare("SELECT setting_value FROM app_settings WHERE setting_key = ?");
-    $stmt->execute([$key]);
-    $lastNum = $stmt->fetchColumn() ?: 0;
-
-    // 2. Tambah 1 untuk ID Baru
-    $nextNum = $lastNum + 1;
-
-    // 3. Format Tanggal (281125)
-    $d = new DateTime($date);
-    $dateCode = date('dmy', strtotime($date)); // 281125
-
-    // 4. Susun Kode (KP-281125-01)
-    // Pad left dengan 0 (misal 1 jadi 01)
-    $padNum = str_pad($nextNum, 2, '0', STR_PAD_LEFT);
-    $prefix = strtoupper($type);
-
-    $generatedID = "$prefix-$dateCode-$padNum";
-
-    echo json_encode(['status' => 'success', 'id' => $generatedID, 'seq' => $nextNum]);
-
+    // Hitung ada berapa transaksi HARI INI
+    if ($prefix === 'KP') {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE DATE(created_at) = ?");
+    } else {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE ki_number IS NOT NULL AND ki_number != '-' AND DATE(created_at) = ?");
+    }
+    
+    $stmt->execute([$todayDb]);
+    $count = (int)$stmt->fetchColumn();
+    
+    // Tambahkan 1 untuk nomor berikutnya dan format jadi 2 digit (01, 02, dst)
+    $nextNum = $count + 1;
+    $sequence = str_pad($nextNum, 2, '0', STR_PAD_LEFT);
+    
+    // Rangkai string ID baru
+    $newId = "{$prefix}-{$todayFormat}-{$sequence}";
+    
+    echo json_encode(['status' => 'success', 'id' => $newId, 'seq' => $nextNum]);
 } catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'id' => 'ERROR']);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

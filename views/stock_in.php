@@ -32,7 +32,6 @@ $canProcess = ($isGudang || $isSuperAdmin);
 
     <div class="bg-white rounded-xl shadow-md border-t-4 border-purple-600 overflow-hidden">
         
-        <!-- NAVIGASI TAB -->
         <div class="flex border-b border-gray-200 bg-gray-50 overflow-x-auto">
             <button onclick="switchTab('stok')" id="tab-stok" class="flex-1 py-4 px-4 text-sm font-bold border-b-2 border-purple-600 text-purple-700 transition outline-none whitespace-nowrap">
                 <i class="fas fa-boxes mr-2"></i> Total Stok Saat Ini
@@ -42,19 +41,18 @@ $canProcess = ($isGudang || $isSuperAdmin);
             </button>
         </div>
 
-        <!-- TAB 1: TOTAL STOK SAAT INI -->
         <div id="box-stok" class="p-0">
             <div class="p-4 bg-purple-50/50 border-b border-purple-100 text-xs text-purple-800 flex items-center">
                 <i class="fas fa-info-circle text-purple-600 mr-2 text-lg"></i> 
-                Pantau ketersediaan barang fisik secara real-time. <?= $isGudang ? 'Menampilkan data khusus cabang <b class="ml-1">'.strtoupper($userWh).'</b>.' : '' ?>
+                Pantau ketersediaan barang fisik secara real-time dari semua cabang.
             </div>
             <div class="overflow-x-auto min-h-[400px]">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-white text-gray-600 text-[11px] uppercase font-black tracking-wider">
                         <tr>
                             <th class="px-6 py-4 text-left w-1/3">Nama Produk</th>
-                            <th class="px-6 py-4 text-center w-1/4">Total Stok <?= $isGudang ? 'Gudang' : '(Nasional)' ?></th>
-                            <th class="px-6 py-4 text-left">Rincian <?= $isGudang ? 'Cabang' : 'Per Cabang' ?></th>
+                            <th class="px-6 py-4 text-center w-1/4">Total Stok (Nasional)</th>
+                            <th class="px-6 py-4 text-left">Rincian Per Cabang</th>
                         </tr>
                     </thead>
                     <tbody id="stock-rows" class="divide-y divide-gray-100 text-sm">
@@ -62,14 +60,12 @@ $canProcess = ($isGudang || $isSuperAdmin);
                     </tbody>
                 </table>
             </div>
-            <!-- Paginasi Stok -->
             <div id="stock-pagination-container" class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="text-xs text-gray-500 font-bold" id="stock-page-info">Memuat paginasi...</div>
                 <div class="flex gap-1" id="stock-page-buttons"></div>
             </div>
         </div>
 
-        <!-- TAB 2: RIWAYAT MASUK -->
         <div id="box-riwayat" class="hidden p-0">
             <div class="overflow-x-auto min-h-[400px]">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -80,14 +76,14 @@ $canProcess = ($isGudang || $isSuperAdmin);
                             <th class="px-6 py-4 text-left">Produk</th>
                             <th class="px-6 py-4 text-left">Gudang Tujuan</th>
                             <th class="px-6 py-4 text-right">Qty Masuk</th>
+                            <th class="px-6 py-4 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="in-rows" class="divide-y divide-gray-100 text-sm">
-                        <tr><td colspan="5" class="text-center py-10 text-gray-400 italic">Memuat riwayat...</td></tr>
+                        <tr><td colspan="6" class="text-center py-10 text-gray-400 italic">Memuat riwayat...</td></tr>
                     </tbody>
                 </table>
             </div>
-            <!-- Paginasi Riwayat -->
             <div id="history-pagination-container" class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="text-xs text-gray-500 font-bold" id="history-page-info">Memuat paginasi...</div>
                 <div class="flex gap-1" id="history-page-buttons"></div>
@@ -97,7 +93,6 @@ $canProcess = ($isGudang || $isSuperAdmin);
     </div>
 </div>
 
-<!-- MODAL INPUT STOK (TAMBAH BARANG) -->
 <div id="modal-in" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all">
         <div class="bg-purple-50 px-6 py-4 border-b border-purple-200 flex justify-between items-center">
@@ -124,6 +119,30 @@ $canProcess = ($isGudang || $isSuperAdmin);
             </div>
             <button onclick="submitStockIn()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl shadow-lg mt-4 transition transform active:scale-95 flex items-center justify-center gap-2">
                 <i class="fas fa-save"></i> SIMPAN & TAMBAH STOK
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-edit" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all">
+        <div class="bg-yellow-50 px-6 py-4 border-b border-yellow-200 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-yellow-900"><i class="fas fa-edit mr-2 text-yellow-600"></i> Edit Riwayat Stok</h3>
+            <button onclick="closeModalEdit()" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="edit-mutation-id">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nomor Referensi</label>
+                <input type="text" id="edit-ref" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 font-bold text-gray-700 transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Koreksi Jumlah Masuk (Qty)</label>
+                <input type="number" step="any" min="0.01" id="edit-qty" class="w-full border border-yellow-300 rounded-lg p-4 outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500 text-3xl font-black text-yellow-800 text-center shadow-inner transition">
+                <p class="text-[10px] text-gray-400 mt-2 text-center font-medium">Sistem otomatis menghitung selisih dan mengupdate stok persediaan utama.</p>
+            </div>
+            <button onclick="submitEditStock()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-black py-4 rounded-xl shadow-lg mt-4 transition transform active:scale-95 flex items-center justify-center gap-2">
+                <i class="fas fa-save"></i> SIMPAN PERUBAHAN
             </button>
         </div>
     </div>
@@ -199,21 +218,15 @@ function renderStockTable() {
         let totalTampil = 0;
         let rincianCabang = `<div class="flex flex-wrap gap-2">`;
         
-        if (isGudang) {
-            let qty = parseFloat(p.stocks[myWarehouse]) || 0;
-            totalTampil = qty;
+        // Menampilkan rincian seluruh cabang
+        for (let wh in p.stocks) { 
+            let qty = parseFloat(p.stocks[wh]) || 0;
+            totalTampil += qty;
             
             let badgeColor = qty <= 0 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-700 border-green-200';
-            rincianCabang += `<span class="px-3 py-1.5 rounded-lg text-xs font-black border ${badgeColor} shadow-sm uppercase">${myWarehouse}: ${qty}</span>`;
-        } else {
-            for (let wh in p.stocks) { 
-                let qty = parseFloat(p.stocks[wh]) || 0;
-                totalTampil += qty;
-                
-                let badgeColor = qty <= 0 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-700 border-green-200';
-                rincianCabang += `<span class="px-2.5 py-1.5 rounded-md text-[11px] font-bold border ${badgeColor} shadow-sm">${wh}: ${qty}</span>`;
-            }
+            rincianCabang += `<span class="px-2.5 py-1.5 rounded-md text-[11px] font-bold border ${badgeColor} shadow-sm">${wh}: ${qty}</span>`;
         }
+        
         rincianCabang += `</div>`;
 
         rowsHTML += `
@@ -249,7 +262,6 @@ function renderStockPagination(totalItems, totalPages) {
     info.innerHTML = `Menampilkan ${startItem} - ${endItem} dari <span class="text-purple-600 font-black">${totalItems}</span> data.`;
 
     let html = '';
-    
     if(currentStockPage > 1) {
         html += `<button onclick="changeStockPage(${currentStockPage - 1})" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 transition text-xs font-bold shadow-sm"><i class="fas fa-chevron-left"></i></button>`;
     } else {
@@ -297,7 +309,7 @@ function renderHistoryTable() {
     tbody.innerHTML = '';
     
     if(allHistoryData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-gray-400 font-bold uppercase tracking-widest">Belum ada riwayat barang masuk.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400 font-bold uppercase tracking-widest">Belum ada riwayat barang masuk.</td></tr>';
         renderHistoryPagination(0, 0);
         return;
     }
@@ -316,6 +328,11 @@ function renderHistoryTable() {
                 <td class="px-6 py-4 font-black text-gray-900 uppercase text-xs">${d.product_name}</td>
                 <td class="px-6 py-4 text-gray-700 font-bold text-xs uppercase"><i class="fas fa-warehouse text-purple-400 mr-1"></i>${d.warehouse_name}</td>
                 <td class="px-6 py-4 text-right font-black text-emerald-600 text-sm bg-emerald-50/30">+ ${parseFloat(d.qty)} <span class="text-[10px] text-emerald-500 ml-1">${d.unit}</span></td>
+                <td class="px-6 py-4 text-center">
+                    <button onclick="openModalEdit(${d.id}, ${parseFloat(d.qty)}, '${d.reference_no}')" class="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </td>
             </tr>
         `;
     });
@@ -339,7 +356,6 @@ function renderHistoryPagination(totalItems, totalPages) {
     info.innerHTML = `Menampilkan ${startItem} - ${endItem} dari <span class="text-purple-600 font-black">${totalItems}</span> data.`;
 
     let html = '';
-    
     if(currentHistoryPage > 1) {
         html += `<button onclick="changeHistoryPage(${currentHistoryPage - 1})" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-600 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 transition text-xs font-bold shadow-sm"><i class="fas fa-chevron-left"></i></button>`;
     } else {
@@ -386,10 +402,8 @@ async function loadOptions() {
         selW.innerHTML = '<option value="">-- Pilih Cabang --</option>';
         if(dataW.data && dataW.data.length > 0) {
             dataW.data.forEach(w => {
-                if(isGudang && w.name !== myWarehouse) return;
                 selW.innerHTML += `<option value="${w.id}">${w.name}</option>`;
             });
-            
             if(selW.options.length === 2) selW.selectedIndex = 1;
         } else {
             selW.innerHTML = '<option value="">(Gudang Kosong)</option>';
@@ -428,6 +442,42 @@ function submitStockIn() {
             Swal.fire('Sukses', d.message, 'success'); 
             loadCurrentStock(); 
             loadHistory(); 
+        } else {
+            Swal.fire('Error', d.message, 'error');
+        }
+    }).catch(() => Swal.fire('Error', 'Koneksi gagal', 'error'));
+}
+
+// Fungsi Modal Edit
+function openModalEdit(id, qty, ref) {
+    if(!canProcess) return Swal.fire('Ditolak', 'Akses proses ditolak.', 'error');
+    document.getElementById('edit-mutation-id').value = id;
+    document.getElementById('edit-qty').value = qty;
+    document.getElementById('edit-ref').value = ref;
+    document.getElementById('modal-edit').classList.remove('hidden');
+}
+
+function closeModalEdit() { document.getElementById('modal-edit').classList.add('hidden'); }
+
+function submitEditStock() {
+    const payload = {
+        action: 'edit',
+        mutation_id: document.getElementById('edit-mutation-id').value,
+        qty: parseFloat(document.getElementById('edit-qty').value),
+        reference_no: document.getElementById('edit-ref').value || 'Tanpa Referensi'
+    };
+
+    if(!payload.qty || payload.qty <= 0) return Swal.fire('Peringatan', 'Jumlah/Qty harus lebih dari 0!', 'warning');
+
+    Swal.fire({title: 'Memperbarui...', allowOutsideClick: false}); Swal.showLoading();
+
+    fetch('api/stock_in_action.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
+    .then(r => r.json()).then(d => {
+        if(d.status === 'success') { 
+            closeModalEdit(); 
+            Swal.fire('Sukses', d.message, 'success'); 
+            loadCurrentStock(); // Refresh persediaan
+            loadHistory();      // Refresh riwayat
         } else {
             Swal.fire('Error', d.message, 'error');
         }

@@ -19,10 +19,8 @@ $isGudang = ($userRole === 'admin_gudang');
         
         <div class="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-3">
             <i class="fas fa-box-open text-lg"></i> 
-            <div class="flex flex-col text-left">
-                <span class="opacity-70 text-[9px] uppercase">Gudang Aktif</span>
-                <span><?= strtoupper($userWh ?: 'PUSAT (SEMUA)') ?></span>
-            </div>
+            <span class="opacity-70 text-[9px] uppercase">Monitoring Cabang</span>
+<span><?= strtoupper($userWh) ?> (Read-Only)</span>
         </div>
     </div>
 
@@ -36,12 +34,11 @@ $isGudang = ($userRole === 'admin_gudang');
             </div>
 
             <!-- Filter Cabang Dinamis (Hanya muncul untuk Super Admin) -->
-            <?php if(!$isGudang): ?>
+       
             <select id="filter-gudang" onchange="filterTable()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold text-gray-600 bg-gray-50 outline-none focus:ring-purple-500 shadow-sm transition">
                 <option value="">-- Semua Gudang --</option>
                 <!-- Data ini akan diisi secara otomatis oleh JavaScript dari database -->
             </select>
-            <?php endif; ?>
         </div>
 
         <div class="flex gap-2">
@@ -139,7 +136,7 @@ const rowsPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadPengepakan();
-    if(!isGudang) loadCabangFilter(); // Panggil pengisian dropdown otomatis jika bukan admin cabang
+    loadCabangFilter(); // Panggil pengisian dropdown otomatis jika bukan admin cabang
 });
 
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
